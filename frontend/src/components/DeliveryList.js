@@ -30,6 +30,29 @@ const DeliveryList = () => {
               <>
                 <strong>Address:</strong> {invoice.parsed_data.address || "Dirección no encontrada"}<br />
                 <strong>Total Amount:</strong> {invoice.parsed_data.total_amount !== null && invoice.parsed_data.total_amount !== undefined ? invoice.parsed_data.total_amount : "Monto no encontrado"}<br />
+                {invoice.parsed_data.product_items && invoice.parsed_data.product_items.length > 0 && (
+                  <div style={{ marginTop: '10px', border: '1px solid #eee', padding: '5px' }}>
+                    <strong>Product Items:</strong>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '5px' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'left' }}>Product Code</th>
+                          <th style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'left' }}>Description</th>
+                          <th style={{ border: '1px solid #ccc', padding: '8px', textAlign: 'left' }}>Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoice.parsed_data.product_items.map((item, itemIndex) => (
+                          <tr key={itemIndex}>
+                            <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.product_code}</td>
+                            <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.description}</td>
+                            <td style={{ border: '1px solid #ccc', padding: '8px' }}>{item.quantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </>
             )}
             {invoice.raw_ocr_text && (

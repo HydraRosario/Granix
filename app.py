@@ -227,41 +227,57 @@ def create_app() -> Flask:
         :param raw_ocr_text: Texto crudo del OCR
         :return: Diccionario con datos estructurados
         """
-        address = None
+        address = "Dirección no encontrada"
         total_amount = None
+        product_items = []
 
-        # --- EXTRACCIÓN DE DIRECCIÓN ---
-        # Intento 1: Buscar "Dirección:" (ignorando mayúsculas/minúsculas y acentos)
-        address_pattern1 = re.search(r'Direcci[oó]n:\s*(.+)', raw_ocr_text, re.IGNORECASE)
-        if address_pattern1:
-            address = address_pattern1.group(1).strip()
-        else:
-            # Intento 2: Buscar patrones de calle más generales (ej. "Calle XXXXX")
-            address_pattern2 = re.search(r'(?:Calle|Av\.|Avenida)\s+([^,\n]+)', raw_ocr_text, re.IGNORECASE)
-            if address_pattern2:
-                address = address_pattern2.group(1).strip()
+        # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
+        address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
+        match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
+        if match_address:
+            try:
+                address = match_address.group(1).strip()
+                address = address.replace('\n', ' ').replace('*', '').replace('.', '')
+            except IndexError:
+                pass
 
         # --- EXTRACCIÓN DE MONTO TOTAL ---
-        # Buscar "Total:", "Total a pagar:", "$" seguido de un número
-        total_pattern = re.search(r'(?:Total|Total a pagar):?\s*\$?\s*([\d\.,]+)', raw_ocr_text, re.IGNORECASE)
-        if total_pattern:
-            # Reemplazar comas por puntos para una conversión a float consistente
+        total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
+        match_total = re.search(total_amount_pattern, raw_ocr_text)
+        if match_total:
             try:
-                total_amount = float(total_pattern.group(1).replace(',', '.'))
+                total_amount = float(match_total.group(1).replace('.', '').replace(',', '.'))
             except (ValueError, IndexError):
-                total_amount = None # En caso de que la conversión a float falle
+                pass
 
-        # --- EXTRACCIÓN DE ÍTEMS (MOCKUP/EJEMPLO) ---
-        items = [
-            {"product_code": "MOCK_PROD_1", "description": "Producto de Prueba Uno", "quantity": 10},
-            {"product_code": "MOCK_PROD_2", "description": "Producto de Prueba Dos", "quantity": 5}
-        ]
+        # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
+        # Regex para capturar Código de Artículo, Cantidad y Descripción
+        # Asumiendo el formato: 45007 1 Caja AVENA TRADICIONAL 8 x 400 g 1.000,00 1.000,00
+        # product_line_pattern = r'(\d{5})\s+(\d+)\s+Caja\s+(.+?)\s+[\d.,]+\s+[\d.,]+'
+        # Refined regex to be more flexible with "Caja" and capture item_total
+        product_line_pattern = r'(\d{5})\s+(\d+)\s+(?:Caja|Paq|Unid|Kg|Lt|Gr)?\s*(.+?)\s+([\d.,]+)\s+([\d.,]+)'
+
+        for line_match in re.finditer(product_line_pattern, raw_ocr_text):
+            try:
+                product_code = line_match.group(1)
+                quantity = int(line_match.group(2))
+                description = line_match.group(3).strip()
+                # Assuming the last captured group is item_total
+                item_total = float(line_match.group(5).replace('.', '').replace(',', '.'))
+
+                product_items.append({
+                    "product_code": product_code,
+                    "quantity": quantity,
+                    "description": description,
+                    "item_total": item_total,
+                })
+            except (ValueError, IndexError):
+                pass # Ignorar si el parseo de la línea falla
 
         return {
             "address": address,
             "total_amount": total_amount,
-            "items": items,
-            "extraction_confidence": "low" if not address and not total_amount else "medium"
+            "product_items": product_items,
         }
 
     def extract_text_from_image(image_input) -> str:
