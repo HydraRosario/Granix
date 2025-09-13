@@ -7,7 +7,7 @@ export const uploadInvoice = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await axios.post(`${API_BASE_URL}/upload-invoice`, formData, {
+    const response = await axios.post(`${API_BASE_URL}/process_invoice`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

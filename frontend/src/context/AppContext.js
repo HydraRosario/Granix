@@ -12,8 +12,8 @@ export const AppProvider = ({ children }) => {
     setIsLoading(true);
     setError(null); // Clear previous errors
     try {
-      const newInvoice = await uploadInvoice(file);
-      setInvoices((prevInvoices) => [...prevInvoices, newInvoice]);
+      const newInvoices = await uploadInvoice(file);
+      setInvoices((prevInvoices) => [...prevInvoices, ...newInvoices]);
     } catch (err) {
       setError(err.message || 'An unknown error occurred during upload.');
     } finally {

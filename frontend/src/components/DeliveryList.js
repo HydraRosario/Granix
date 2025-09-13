@@ -32,6 +32,16 @@ const DeliveryList = () => {
                 <strong>Total Amount:</strong> {invoice.parsed_data.total_amount !== null && invoice.parsed_data.total_amount !== undefined ? invoice.parsed_data.total_amount : "Monto no encontrado"}<br />
               </>
             )}
+            {invoice.raw_ocr_text && (
+              <div>
+                <strong>Raw OCR Text:</strong>
+                <textarea
+                  readOnly
+                  style={{ width: '100%', height: '100px', marginTop: '5px' }}
+                  value={invoice.raw_ocr_text}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>

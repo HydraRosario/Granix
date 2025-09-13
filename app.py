@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 from geopy.geocoders import Nominatim
 from flask_cors import CORS # Importa CORS
+from pdf2image import convert_from_path
 
 # Dirección de respaldo para geocodificación fallida
 DEFAULT_START_ADDRESS = "Mendoza 8895, Rosario, Santa Fe, Argentina"
@@ -294,8 +295,8 @@ def create_app() -> Flask:
         text = pytesseract.image_to_string(img, lang=lang)
         return text
 
-    @app.post("/upload-invoice")
-    def upload_invoice():
+    @app.post("/process_invoice")
+    def process_invoice():
         """
         Endpoint para subir y procesar una imagen de factura.
         """
@@ -306,61 +307,88 @@ def create_app() -> Flask:
         if not file_obj or file_obj.filename == "":
             return jsonify(error="Archivo inválido o nombre vacío"), 400
 
+        filename = secure_filename(file_obj.filename)
         temp_path = None
+        results = []
+
         try:
-            # Guardar temporalmente para OCR
-            with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(file_obj.filename)) as temp_file:
+            # Guardar temporalmente
+            with tempfile.NamedTemporaryFile(delete=False, suffix=filename) as temp_file:
                 file_obj.save(temp_file.name)
                 temp_path = temp_file.name
-            
-            # Reset file pointer before reading again for upload
-            file_obj.seek(0)
 
-            # 1. Extraer texto con OCR
-            raw_ocr_text = extract_text_from_image(temp_path)
-            app.logger.info(f"OCR completado, texto extraído: {len(raw_ocr_text)} caracteres")
+            if file_obj.mimetype == 'application/pdf':
+                images = convert_from_path(temp_path, poppler_path=r"C:\Users\HHHES\Documents\poppler\poppler-25.07.0\Library\bin")
+                for i, image in enumerate(images):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
+                        image.save(img_temp_file.name, 'PNG')
+                        img_temp_path = img_temp_file.name
+                    
+                    # Procesar cada imagen
+                    raw_ocr_text = extract_text_from_image(img_temp_path)
+                    cloudinary_url = upload_image_to_cloudinary(img_temp_path)
+                    parsed_data = parse_invoice_text(raw_ocr_text)
+                    coordinates = geocode_address(parsed_data["address"])
+                    
+                    invoice_id = uuid4().hex
+                    firestore_data = {
+                        "cloudinaryImageUrl": cloudinary_url,
+                        "uploadedAt": datetime.now(),
+                        "rawOcrText": raw_ocr_text,
+                        "parsedData": parsed_data,
+                        "location": {
+                            "address": parsed_data["address"],
+                            "latitude": coordinates["latitude"],
+                            "longitude": coordinates["longitude"]
+                        },
+                        "status": "processed",
+                        "processedAt": datetime.now()
+                    }
+                    save_invoice_data(invoice_id, firestore_data)
+                    
+                    results.append({
+                        "invoice_id": invoice_id,
+                        "url": cloudinary_url,
+                        "raw_ocr_text": raw_ocr_text,
+                        "parsed_data": parsed_data,
+                        "coordinates": coordinates,
+                        "status": "processed"
+                    })
+                    cleanup_temp_file(img_temp_path)
+            else:
+                # Procesar como imagen única
+                raw_ocr_text = extract_text_from_image(temp_path)
+                cloudinary_url = upload_image_to_cloudinary(temp_path)
+                parsed_data = parse_invoice_text(raw_ocr_text)
+                coordinates = geocode_address(parsed_data["address"])
 
-            # 2. Subir a Cloudinary
-            cloudinary_url = upload_image_to_cloudinary(temp_path)
-            app.logger.info(f"Imagen subida a Cloudinary: {cloudinary_url}")
-            
-            # 3. Parsear datos estructurados
-            parsed_data = parse_invoice_text(raw_ocr_text)
-            
-            # 4. Geocodificar dirección
-            coordinates = geocode_address(parsed_data["address"])
-            
-            # 5. Preparar datos para Firestore
-            invoice_id = uuid4().hex
-            firestore_data = {
-                "cloudinaryImageUrl": cloudinary_url,
-                "uploadedAt": datetime.now(),
-                "rawOcrText": raw_ocr_text,
-                "parsedData": parsed_data,
-                "location": {
-                    "address": parsed_data["address"],
-                    "latitude": coordinates["latitude"],
-                    "longitude": coordinates["longitude"]
-                },
-                "status": "processed",
-                "processedAt": datetime.now()
-            }
-            
-            # 6. Guardar en Firestore
-            save_invoice_data(invoice_id, firestore_data)
-            
-            # 7. Respuesta completa
-            response_data = {
-                "invoice_id": invoice_id,
-                "url": cloudinary_url,
-                "raw_ocr_text": raw_ocr_text,
-                "parsed_data": parsed_data,
-                "coordinates": coordinates,
-                "status": "processed"
-            }
-            
-            return jsonify(response_data), 200
-            
+                invoice_id = uuid4().hex
+                firestore_data = {
+                    "cloudinaryImageUrl": cloudinary_url,
+                    "uploadedAt": datetime.now(),
+                    "rawOcrText": raw_ocr_text,
+                    "parsedData": parsed_data,
+                    "location": {
+                        "address": parsed_data["address"],
+                        "latitude": coordinates["latitude"],
+                        "longitude": coordinates["longitude"]
+                    },
+                    "status": "processed",
+                    "processedAt": datetime.now()
+                }
+                save_invoice_data(invoice_id, firestore_data)
+
+                results.append({
+                    "invoice_id": invoice_id,
+                    "url": cloudinary_url,
+                    "raw_ocr_text": raw_ocr_text,
+                    "parsed_data": parsed_data,
+                    "coordinates": coordinates,
+                    "status": "processed"
+                })
+
+            return jsonify(results), 200
+
         except ValueError as ve:
             return jsonify(error=str(ve)), 500
         except Exception as e:
