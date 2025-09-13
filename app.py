@@ -19,7 +19,7 @@ from flask_cors import CORS # Importa CORS
 from pdf2image import convert_from_path
 
 # Dirección de respaldo para geocodificación fallida
-DEFAULT_START_ADDRESS = "Mendoza 8895, Rosario, Santa Fe, Argentina"
+DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
 
 # Carga variables de entorno desde .env si existe
 load_dotenv()
@@ -326,9 +326,74 @@ def create_app() -> Flask:
                     
                     # Procesar cada imagen
                     raw_ocr_text = extract_text_from_image(img_temp_path)
+
+                    # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
+                    product_items = []
+                    product_pattern = r'(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d,.]+)'
+                    
+                    header_match = re.search(r'Artículo\s+Cantidad\s+Descripción\s+Precio\s+Importe', raw_ocr_text, re.IGNORECASE)
+                    text_to_search_items = raw_ocr_text
+                    if header_match:
+                        text_to_search_items = raw_ocr_text[header_match.end():]
+
+                    match_item = re.search(product_pattern, text_to_search_items)
+                    
+                    if match_item:
+                        try:
+                            product_code = match_item.group(1)
+                            quantity = int(match_item.group(2))
+                            description = match_item.group(3).strip()
+                            unit_price = float(match_item.group(4).replace(',', '.'))
+                            total_price = float(match_item.group(5).replace(',', '.'))
+
+                            product_items.append({
+                                "product_code": product_code,
+                                "quantity": quantity,
+                                "description": description,
+                                "unit_price": unit_price,
+                                "total_price": total_price,
+                            })
+                        except (ValueError, IndexError):
+                            pass # Ignorar si el parseo falla
+
+                    # --- EXTRACCIÓN DE MONTO TOTAL ---
+                    total_amount = None
+                    total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
+                    match_total = re.search(total_amount_pattern, raw_ocr_text)
+                    if match_total:
+                        try:
+                            total_amount = float(match_total.group(1).replace('.', '').replace(',', '.'))
+                        except (ValueError, IndexError):
+                            pass
+
+                    # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
+                    client_street_address = "Dirección no encontrada"
+                    address_pattern = r'SPORTELLI GUSTAVO\.\s*(.*?)\s*Transp\.:\s*(.*?)\s*\((\d+)\)\s*ROSARIO'
+                    match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
+                    if match_address:
+                        try:
+                            street_and_number = match_address.group(1).strip().replace('\n', ' ')
+                            client_street_address = street_and_number
+                        except IndexError:
+                            pass
+
                     cloudinary_url = upload_image_to_cloudinary(img_temp_path)
                     parsed_data = parse_invoice_text(raw_ocr_text)
-                    coordinates = geocode_address(parsed_data["address"])
+                    if product_items:
+                        parsed_data['items'] = product_items
+                    if total_amount is not None:
+                        parsed_data['total_amount'] = total_amount
+                    if client_street_address != "Dirección no encontrada":
+                        parsed_data['address'] = client_street_address
+                    
+                    # --- GEOCODIFICACIÓN ---
+                    full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
+                    geolocator = Nominatim(user_agent="granix-backend/1.0")
+                    location = geolocator.geocode(full_address, country_codes='ar', timeout=10)
+                    coordinates = {"latitude": None, "longitude": None}
+                    if location:
+                        coordinates["latitude"] = location.latitude
+                        coordinates["longitude"] = location.longitude
                     
                     invoice_id = uuid4().hex
                     firestore_data = {
@@ -346,10 +411,14 @@ def create_app() -> Flask:
                     }
                     save_invoice_data(invoice_id, firestore_data)
                     
+                    formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
+                    
                     results.append({
                         "invoice_id": invoice_id,
                         "url": cloudinary_url,
                         "raw_ocr_text": raw_ocr_text,
+                        "product_items": product_items,
+                        "total_amount": formatted_total_amount,
                         "parsed_data": parsed_data,
                         "coordinates": coordinates,
                         "status": "processed"
@@ -358,9 +427,74 @@ def create_app() -> Flask:
             else:
                 # Procesar como imagen única
                 raw_ocr_text = extract_text_from_image(temp_path)
+
+                # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
+                product_items = []
+                product_pattern = r'(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d,.]+)'
+                
+                header_match = re.search(r'Artículo\s+Cantidad\s+Descripción\s+Precio\s+Importe', raw_ocr_text, re.IGNORECASE)
+                text_to_search_items = raw_ocr_text
+                if header_match:
+                    text_to_search_items = raw_ocr_text[header_match.end():]
+
+                match_item = re.search(product_pattern, text_to_search_items)
+                
+                if match_item:
+                    try:
+                        product_code = match_item.group(1)
+                        quantity = int(match_item.group(2))
+                        description = match_item.group(3).strip()
+                        unit_price = float(match_item.group(4).replace(',', '.'))
+                        total_price = float(match_item.group(5).replace(',', '.'))
+
+                        product_items.append({
+                            "product_code": product_code,
+                            "quantity": quantity,
+                            "description": description,
+                            "unit_price": unit_price,
+                            "total_price": total_price,
+                        })
+                    except (ValueError, IndexError):
+                        pass # Ignorar si el parseo falla
+
+                # --- EXTRACCIÓN DE MONTO TOTAL ---
+                total_amount = None
+                total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
+                match_total = re.search(total_amount_pattern, raw_ocr_text)
+                if match_total:
+                    try:
+                        total_amount = float(match_total.group(1).replace('.', '').replace(',', '.'))
+                    except (ValueError, IndexError):
+                        pass
+
+                # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
+                client_street_address = "Dirección no encontrada"
+                address_pattern = r'SPORTELLI GUSTAVO\.\s*(.*?)\s*Transp\.:\s*(.*?)\s*\((\d+)\)\s*ROSARIO'
+                match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
+                if match_address:
+                    try:
+                        street_and_number = match_address.group(1).strip().replace('\n', ' ')
+                        client_street_address = street_and_number
+                    except IndexError:
+                        pass
+
                 cloudinary_url = upload_image_to_cloudinary(temp_path)
                 parsed_data = parse_invoice_text(raw_ocr_text)
-                coordinates = geocode_address(parsed_data["address"])
+                if product_items:
+                    parsed_data['items'] = product_items
+                if total_amount is not None:
+                    parsed_data['total_amount'] = total_amount
+                if client_street_address != "Dirección no encontrada":
+                    parsed_data['address'] = client_street_address
+
+                # --- GEOCODIFICACIÓN ---
+                full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
+                geolocator = Nominatim(user_agent="granix-backend/1.0")
+                location = geolocator.geocode(full_address, country_codes='ar', timeout=10)
+                coordinates = {"latitude": None, "longitude": None}
+                if location:
+                    coordinates["latitude"] = location.latitude
+                    coordinates["longitude"] = location.longitude
 
                 invoice_id = uuid4().hex
                 firestore_data = {
@@ -378,10 +512,14 @@ def create_app() -> Flask:
                 }
                 save_invoice_data(invoice_id, firestore_data)
 
+                formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
+
                 results.append({
                     "invoice_id": invoice_id,
                     "url": cloudinary_url,
                     "raw_ocr_text": raw_ocr_text,
+                    "product_items": product_items,
+                    "total_amount": formatted_total_amount,
                     "parsed_data": parsed_data,
                     "coordinates": coordinates,
                     "status": "processed"
