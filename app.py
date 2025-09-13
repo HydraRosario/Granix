@@ -1,12 +1,11 @@
 import os
 import tempfile
-import requests
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import storage
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
+import cloudinary
+import cloudinary.uploader
 from werkzeug.utils import secure_filename
 from uuid import uuid4
 from PIL import Image
@@ -16,10 +15,13 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any
 from geopy.geocoders import Nominatim
+from flask_cors import CORS # Importa CORS
+
+# Dirección de respaldo para geocodificación fallida
+DEFAULT_START_ADDRESS = "Mendoza 8895, Rosario, Santa Fe, Argentina"
 
 # Carga variables de entorno desde .env si existe
 load_dotenv()
-
 
 @dataclass
 class Location:
@@ -56,7 +58,7 @@ class Delivery:
     order: Order
     location: Location
     status: str
-    original_image_url: str
+    cloudinary_image_url: str
     raw_ocr_text: str
     uploaded_at: datetime
     processed_at: Optional[datetime] = None
@@ -69,37 +71,33 @@ def create_app() -> Flask:
     GOOGLE_APPLICATION_CREDENTIALS.
     """
     app = Flask(__name__)
+    CORS(app) # Inicializa CORS en la aplicación
+
+    # Configurar Cloudinary
+    cloudinary.config(
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    )
+    app.logger.info("Cloudinary configurado.")
 
     # Inicializar Firebase Admin SDK si aún no está inicializado
     try:
         if not firebase_admin._apps:
-            cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-            # Permitir que la ruta esté entrecomillada en .env
+            cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
             if cred_path:
-                cred_path = cred_path.strip().strip('"').strip("'")
+                cred_path = cred_path.strip().strip('\'').strip("'")
 
-            bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET_NAME")
-            options = {}
-            if bucket_name:
-                options["storageBucket"] = bucket_name
             if cred_path and os.path.isfile(cred_path):
                 cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred, options or None)
+                firebase_admin.initialize_app(cred)
                 app.logger.info("Firebase Admin inicializado correctamente.")
             else:
-                # Intentar inicializar sin credenciales explícitas (ADC), si hay opciones
-                try:
-                    firebase_admin.initialize_app(options=options or None)
-                    app.logger.warning(
-                        "Inicializado Firebase Admin usando credenciales por defecto (ADC)."
-                    )
-                except Exception:
-                    app.logger.warning(
-                        "GOOGLE_APPLICATION_CREDENTIALS no está definida o el archivo no existe. "
-                        "Se omite la inicialización de Firebase por ahora."
-                    )
+                app.logger.warning(
+                    "FIREBASE_CREDENTIALS_PATH no está definida o el archivo no existe. "
+                    "Se omite la inicialización de Firebase por ahora."
+                )
     except Exception as e:
-        # No bloquear el arranque de Flask, pero registrar el error
         app.logger.error(f"Error al inicializar Firebase Admin: {e}")
 
     @app.get("/")
@@ -110,37 +108,14 @@ def create_app() -> Flask:
     def healthz():
         return jsonify(status="ok"), 200
 
-    def download_image_temporarily(firebase_url: str) -> str:
-        """
-        Descarga una imagen desde Firebase Storage a un archivo temporal.
+    @app.get("/geocode")
+    def geocode_endpoint():
+        address = request.args.get("address")
+        if not address:
+            return jsonify(error="Parámetro 'address' es requerido."), 400
         
-        :param firebase_url: URL pública de Firebase Storage
-        :return: Ruta local del archivo temporal
-        :raises: Exception en caso de error de descarga
-        """
-        try:
-            # Crear archivo temporal
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
-            temp_path = temp_file.name
-            temp_file.close()
-            
-            # Descargar la imagen
-            response = requests.get(firebase_url, timeout=30)
-            response.raise_for_status()
-            
-            # Guardar en archivo temporal
-            with open(temp_path, 'wb') as f:
-                f.write(response.content)
-            
-            app.logger.info(f"Imagen descargada temporalmente en: {temp_path}")
-            return temp_path
-            
-        except Exception as e:
-            app.logger.error(f"Error descargando imagen: {e}")
-            # Limpiar archivo temporal si se creó
-            if 'temp_path' in locals() and os.path.exists(temp_path):
-                os.unlink(temp_path)
-            raise
+        coordinates = geocode_address(address)
+        return jsonify(coordinates), 200
 
     def cleanup_temp_file(file_path: str) -> None:
         """
@@ -155,50 +130,23 @@ def create_app() -> Flask:
         except Exception as e:
             app.logger.warning(f"Error eliminando archivo temporal {file_path}: {e}")
 
-    def upload_image_to_storage(file_storage, *, folder_prefix: str = "invoices/raw") -> str:
+    def upload_image_to_cloudinary(file_obj) -> str:
         """
-        Sube un archivo de imagen a Firebase Storage y retorna la URL pública.
+        Sube un archivo de imagen a Cloudinary y retorna la URL segura.
 
-        :param file_storage: objeto FileStorage recibido desde request.files
-        :param folder_prefix: carpeta destino dentro del bucket
-        :return: URL pública del archivo subido
-        :raises: ValueError en caso de configuración faltante
+        :param file_obj: objeto FileStorage o ruta a un archivo
+        :return: URL segura del archivo subido
+        :raises: Exception en caso de error de subida
         """
-        if not firebase_admin._apps:
-            raise ValueError("Firebase Admin no está inicializado. Configure GOOGLE_APPLICATION_CREDENTIALS.")
-
-        bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET_NAME")
-        if not bucket_name:
-            raise ValueError("Falta variable FIREBASE_STORAGE_BUCKET_NAME en el entorno.")
-
-        bucket = storage.bucket(bucket_name)
-
-        filename = secure_filename(file_storage.filename or "invoice")
-        unique_id = uuid4().hex
-        destination_path = f"{folder_prefix}/{unique_id}_{filename}"
-
-        blob = bucket.blob(destination_path)
-        # Generar token para descarga vía Firebase Storage
-        download_token = uuid4().hex
-        # Subir desde memoria, preservando el content_type cuando sea posible, y agregando token como metadato
-        blob.upload_from_string(
-            file_storage.read(),
-            content_type=file_storage.mimetype,
-            predefined_acl=None,
-        )
-        # Establecer metadata de token para Firebase Storage
-        blob.metadata = blob.metadata or {}
-        blob.metadata["firebaseStorageDownloadTokens"] = download_token
-        blob.patch()
-
-        # Construir URL de descarga estilo Firebase
-        from urllib.parse import quote
-        encoded_path = quote(destination_path, safe="")
-        bucket_name = blob.bucket.name
-        download_url = (
-            f"https://firebasestorage.googleapis.com/v0/b/{bucket_name}/o/{encoded_path}?alt=media&token={download_token}"
-        )
-        return download_url
+        try:
+            upload_result = cloudinary.uploader.upload(
+                file_obj,
+                folder="granix-invoices"
+            )
+            return upload_result['secure_url']
+        except Exception as e:
+            app.logger.error(f"Error al subir a Cloudinary: {e}")
+            raise
 
     def save_invoice_data(invoice_id: str, data: Dict[str, Any]) -> None:
         """
@@ -218,14 +166,22 @@ def create_app() -> Flask:
 
     def geocode_address(address_string: str) -> Dict[str, Optional[float]]:
         """
-        Geocodifica una dirección usando Nominatim.
-        
+        Geocodifica una dirección usando Nominatim con un enfoque robusto.
+
         :param address_string: Dirección a geocodificar
         :return: Diccionario con latitude y longitude
         """
+        geolocator = Nominatim(user_agent="granix-backend/1.0")
+        
+        # Usar la dirección por defecto si la dirección proporcionada es None o vacía
+        if not address_string:
+            app.logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
+            address_string = DEFAULT_START_ADDRESS
+
         try:
-            geolocator = Nominatim(user_agent="granix-backend/1.0")
-            location = geolocator.geocode(address_string, timeout=10)
+            # Construir una única cadena de consulta
+            full_query = f"{address_string}, Rosario, Santa Fe, Argentina"
+            location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
             
             if location:
                 return {
@@ -233,67 +189,76 @@ def create_app() -> Flask:
                     "longitude": location.longitude
                 }
             else:
-                app.logger.warning(f"No se pudo geocodificar la dirección: {address_string}")
-                return {"latitude": None, "longitude": None}
+                app.logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Usando dirección por defecto.")
+                # Si Nominatim no encuentra la dirección, usar la dirección por defecto
+                default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
+                location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+                if location:
+                    return {
+                        "latitude": location.latitude,
+                        "longitude": location.longitude
+                    }
+                else:
+                    app.logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
+                    return {"latitude": None, "longitude": None} # Fallback final
         except Exception as e:
-            app.logger.error(f"Error en geocodificación: {e}")
-            return {"latitude": None, "longitude": None}
+            app.logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}. Usando dirección por defecto.")
+            # En caso de error, intentar geocodificar la dirección por defecto
+            try:
+                default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
+                location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+                if location:
+                    return {
+                        "latitude": location.latitude,
+                        "longitude": location.longitude
+                    }
+                else:
+                    app.logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
+                    return {"latitude": None, "longitude": None} # Fallback final
+            except Exception as e_default:
+                app.logger.error(f"Error catastrófico al geocodificar la dirección por defecto: {e_default}")
+                return {"latitude": None, "longitude": None} # Fallback final
 
     def parse_invoice_text(raw_ocr_text: str) -> Dict[str, Any]:
         """
-        Extrae datos estructurados del texto OCR de una factura.
-        
+        Extrae datos estructurados del texto OCR de una factura de forma robusta.
+
         :param raw_ocr_text: Texto crudo del OCR
         :return: Diccionario con datos estructurados
         """
-        # Patrones regex simples para extracción
-        address_patterns = [
-            r'(?i)direcci[óo]n[:\s]+(.+?)(?:\n|$)',
-            r'(?i)calle[:\s]+(.+?)(?:\n|$)',
-            r'(?i)domicilio[:\s]+(.+?)(?:\n|$)',
-            r'\d+\s+[A-Za-záéíóúñ\s]+\d{4,5}'  # Patrón genérico de dirección
-        ]
-        
-        total_patterns = [
-            r'(?i)total[:\s]+\$?(\d+(?:[,.]?\d+)*)',
-            r'(?i)importe[:\s]+\$?(\d+(?:[,.]?\d+)*)',
-            r'\$(\d+(?:[,.]?\d+)*)',
-        ]
-        
-        # Buscar dirección
         address = None
-        for pattern in address_patterns:
-            match = re.search(pattern, raw_ocr_text)
-            if match:
-                address = match.group(1).strip()
-                break
-        
-        # Buscar total
         total_amount = None
-        for pattern in total_patterns:
-            match = re.search(pattern, raw_ocr_text)
-            if match:
-                amount_str = match.group(1).replace(',', '.')
-                try:
-                    total_amount = float(amount_str)
-                    break
-                except ValueError:
-                    continue
-        
-        # Simular items (para MVP)
+
+        # --- EXTRACCIÓN DE DIRECCIÓN ---
+        # Intento 1: Buscar "Dirección:" (ignorando mayúsculas/minúsculas y acentos)
+        address_pattern1 = re.search(r'Direcci[oó]n:\s*(.+)', raw_ocr_text, re.IGNORECASE)
+        if address_pattern1:
+            address = address_pattern1.group(1).strip()
+        else:
+            # Intento 2: Buscar patrones de calle más generales (ej. "Calle XXXXX")
+            address_pattern2 = re.search(r'(?:Calle|Av\.|Avenida)\s+([^,\n]+)', raw_ocr_text, re.IGNORECASE)
+            if address_pattern2:
+                address = address_pattern2.group(1).strip()
+
+        # --- EXTRACCIÓN DE MONTO TOTAL ---
+        # Buscar "Total:", "Total a pagar:", "$" seguido de un número
+        total_pattern = re.search(r'(?:Total|Total a pagar):?\s*\$?\s*([\d\.,]+)', raw_ocr_text, re.IGNORECASE)
+        if total_pattern:
+            # Reemplazar comas por puntos para una conversión a float consistente
+            try:
+                total_amount = float(total_pattern.group(1).replace(',', '.'))
+            except (ValueError, IndexError):
+                total_amount = None # En caso de que la conversión a float falle
+
+        # --- EXTRACCIÓN DE ÍTEMS (MOCKUP/EJEMPLO) ---
         items = [
-            {
-                "product_code": "PROD001",
-                "description": "Producto ejemplo extraído",
-                "quantity": 1,
-                "unit_price": total_amount or 0.0,
-                "total_price": total_amount or 0.0
-            }
+            {"product_code": "MOCK_PROD_1", "description": "Producto de Prueba Uno", "quantity": 10},
+            {"product_code": "MOCK_PROD_2", "description": "Producto de Prueba Dos", "quantity": 5}
         ]
-        
+
         return {
-            "address": address or "Dirección no encontrada",
-            "total_amount": total_amount or 0.0,
+            "address": address,
+            "total_amount": total_amount,
             "items": items,
             "extraction_confidence": "low" if not address and not total_amount else "medium"
         }
@@ -301,17 +266,7 @@ def create_app() -> Flask:
     def extract_text_from_image(image_input) -> str:
         """
         Extrae texto usando Tesseract a través de pytesseract.
-
-        Acepta:
-        - Ruta a imagen (str u os.PathLike)
-        - Objeto PIL.Image.Image
-        - Bytes o file-like con .read()
-
-        Usa variables de entorno opcionales:
-        - TESSERACT_CMD: ruta al ejecutable de tesseract (Windows)
-        - TESSERACT_LANG: idiomas para OCR (por defecto 'spa+eng')
         """
-        # Configurar ubicación del binario Tesseract si se provee
         tesseract_cmd = os.getenv("TESSERACT_CMD")
         if tesseract_cmd:
             pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
@@ -319,28 +274,23 @@ def create_app() -> Flask:
         lang = os.getenv("TESSERACT_LANG", "spa+eng")
 
         img = None
-        # 1) Si es ya una imagen PIL
         if isinstance(image_input, Image.Image):
             img = image_input
-        # 2) Si es una ruta
         elif isinstance(image_input, (str, os.PathLike)):
             img = Image.open(image_input)
         else:
-            # 3) Intentar bytes o file-like
             try:
                 data = image_input.read() if hasattr(image_input, "read") else image_input
                 from io import BytesIO
                 img = Image.open(BytesIO(data))
             except Exception as e:
-                raise ValueError("Entrada de imagen no válida. Se espera ruta, PIL.Image, bytes o file-like.") from e
+                raise ValueError("Entrada de imagen no válida.") from e
 
-        # Normalización simple: pasar a escala de grises para mejorar OCR general
         try:
             img = img.convert("L")
         except Exception:
             pass
 
-        # Ejecutar OCR
         text = pytesseract.image_to_string(img, lang=lang)
         return text
 
@@ -348,15 +298,6 @@ def create_app() -> Flask:
     def upload_invoice():
         """
         Endpoint para subir y procesar una imagen de factura.
-        
-        Flujo completo:
-        1. Subir imagen a Firebase Storage
-        2. Descargar temporalmente para OCR
-        3. Extraer texto con Tesseract
-        4. Parsear datos estructurados
-        5. Geocodificar dirección
-        6. Guardar en Firestore
-        7. Retornar datos procesados
         """
         if "file" not in request.files:
             return jsonify(error="No se encontró el archivo en 'file'"), 400
@@ -367,27 +308,32 @@ def create_app() -> Flask:
 
         temp_path = None
         try:
-            # 1. Subir a Firebase Storage
-            public_url = upload_image_to_storage(file_obj)
-            app.logger.info(f"Imagen subida a Storage: {public_url}")
+            # Guardar temporalmente para OCR
+            with tempfile.NamedTemporaryFile(delete=False, suffix=secure_filename(file_obj.filename)) as temp_file:
+                file_obj.save(temp_file.name)
+                temp_path = temp_file.name
             
-            # 2. Descargar temporalmente
-            temp_path = download_image_temporarily(public_url)
-            
-            # 3. Extraer texto con OCR
+            # Reset file pointer before reading again for upload
+            file_obj.seek(0)
+
+            # 1. Extraer texto con OCR
             raw_ocr_text = extract_text_from_image(temp_path)
             app.logger.info(f"OCR completado, texto extraído: {len(raw_ocr_text)} caracteres")
+
+            # 2. Subir a Cloudinary
+            cloudinary_url = upload_image_to_cloudinary(temp_path)
+            app.logger.info(f"Imagen subida a Cloudinary: {cloudinary_url}")
             
-            # 4. Parsear datos estructurados
+            # 3. Parsear datos estructurados
             parsed_data = parse_invoice_text(raw_ocr_text)
             
-            # 5. Geocodificar dirección
+            # 4. Geocodificar dirección
             coordinates = geocode_address(parsed_data["address"])
             
-            # 6. Preparar datos para Firestore
+            # 5. Preparar datos para Firestore
             invoice_id = uuid4().hex
             firestore_data = {
-                "originalImageUrl": public_url,
+                "cloudinaryImageUrl": cloudinary_url,
                 "uploadedAt": datetime.now(),
                 "rawOcrText": raw_ocr_text,
                 "parsedData": parsed_data,
@@ -400,13 +346,13 @@ def create_app() -> Flask:
                 "processedAt": datetime.now()
             }
             
-            # 7. Guardar en Firestore
+            # 6. Guardar en Firestore
             save_invoice_data(invoice_id, firestore_data)
             
-            # 8. Respuesta completa
+            # 7. Respuesta completa
             response_data = {
                 "invoice_id": invoice_id,
-                "url": public_url,
+                "url": cloudinary_url,
                 "raw_ocr_text": raw_ocr_text,
                 "parsed_data": parsed_data,
                 "coordinates": coordinates,
@@ -421,7 +367,6 @@ def create_app() -> Flask:
             app.logger.exception("Error procesando factura")
             return jsonify(error="Error al procesar la factura"), 500
         finally:
-            # Limpiar archivo temporal
             if temp_path:
                 cleanup_temp_file(temp_path)
 
@@ -433,7 +378,6 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    # Permitir configurar el puerto por env var
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "0") in ("1", "true", "True")
     app.run(host="0.0.0.0", port=port, debug=debug)
