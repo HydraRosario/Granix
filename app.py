@@ -329,32 +329,28 @@ def create_app() -> Flask:
 
                     # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
                     product_items = []
-                    product_pattern = r'(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d,.]+)'
-                    
-                    header_match = re.search(r'Artículo\s+Cantidad\s+Descripción\s+Precio\s+Importe', raw_ocr_text, re.IGNORECASE)
-                    text_to_search_items = raw_ocr_text
-                    if header_match:
-                        text_to_search_items = raw_ocr_text[header_match.end():]
+                    product_block_pattern = r'CUIT.*?(\d{2}-\d{8}-\d{1}).*?(Articulo.+?)(Peso neto total)'
+                    product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
 
-                    match_item = re.search(product_pattern, text_to_search_items)
-                    
-                    if match_item:
-                        try:
-                            product_code = match_item.group(1)
-                            quantity = int(match_item.group(2))
-                            description = match_item.group(3).strip()
-                            unit_price = float(match_item.group(4).replace(',', '.'))
-                            total_price = float(match_item.group(5).replace(',', '.'))
+                    if product_block_match:
+                        product_table_text = product_block_match.group(2)
+                        product_line_pattern = r'(\d+)\s+(\d+)\s+([A-Z\s]+?)\s+([\d.,]+)'
+                        
+                        for line_match in re.finditer(product_line_pattern, product_table_text):
+                            try:
+                                product_code = line_match.group(1)
+                                quantity = int(line_match.group(2))
+                                description = line_match.group(3).strip()
+                                item_total = float(line_match.group(4).replace(',', '.'))
 
-                            product_items.append({
-                                "product_code": product_code,
-                                "quantity": quantity,
-                                "description": description,
-                                "unit_price": unit_price,
-                                "total_price": total_price,
-                            })
-                        except (ValueError, IndexError):
-                            pass # Ignorar si el parseo falla
+                                product_items.append({
+                                    "product_code": product_code,
+                                    "quantity": quantity,
+                                    "description": description,
+                                    "item_total": item_total,
+                                })
+                            except (ValueError, IndexError):
+                                pass # Ignorar si el parseo de la línea falla
 
                     # --- EXTRACCIÓN DE MONTO TOTAL ---
                     total_amount = None
@@ -368,12 +364,12 @@ def create_app() -> Flask:
 
                     # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
                     client_street_address = "Dirección no encontrada"
-                    address_pattern = r'SPORTELLI GUSTAVO\.\s*(.*?)\s*Transp\.:\s*(.*?)\s*\((\d+)\)\s*ROSARIO'
+                    address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
                     match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
                     if match_address:
                         try:
-                            street_and_number = match_address.group(1).strip().replace('\n', ' ')
-                            client_street_address = street_and_number
+                            client_street_address = match_address.group(1).strip()
+                            client_street_address = client_street_address.replace('*', '')
                         except IndexError:
                             pass
 
@@ -430,32 +426,28 @@ def create_app() -> Flask:
 
                 # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
                 product_items = []
-                product_pattern = r'(\d+)\s+(\d+)\s+(.+?)\s+([\d.]+)\s+([\d,.]+)'
-                
-                header_match = re.search(r'Artículo\s+Cantidad\s+Descripción\s+Precio\s+Importe', raw_ocr_text, re.IGNORECASE)
-                text_to_search_items = raw_ocr_text
-                if header_match:
-                    text_to_search_items = raw_ocr_text[header_match.end():]
+                product_block_pattern = r'CUIT.*?(\d{2}-\d{8}-\d{1}).*?(Articulo.+?)(Peso neto total)'
+                product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
 
-                match_item = re.search(product_pattern, text_to_search_items)
-                
-                if match_item:
-                    try:
-                        product_code = match_item.group(1)
-                        quantity = int(match_item.group(2))
-                        description = match_item.group(3).strip()
-                        unit_price = float(match_item.group(4).replace(',', '.'))
-                        total_price = float(match_item.group(5).replace(',', '.'))
+                if product_block_match:
+                    product_table_text = product_block_match.group(2)
+                    product_line_pattern = r'(\d+)\s+(\d+)\s+([A-Z\s]+?)\s+([\d.,]+)'
+                    
+                    for line_match in re.finditer(product_line_pattern, product_table_text):
+                        try:
+                            product_code = line_match.group(1)
+                            quantity = int(line_match.group(2))
+                            description = line_match.group(3).strip()
+                            item_total = float(line_match.group(4).replace(',', '.'))
 
-                        product_items.append({
-                            "product_code": product_code,
-                            "quantity": quantity,
-                            "description": description,
-                            "unit_price": unit_price,
-                            "total_price": total_price,
-                        })
-                    except (ValueError, IndexError):
-                        pass # Ignorar si el parseo falla
+                            product_items.append({
+                                "product_code": product_code,
+                                "quantity": quantity,
+                                "description": description,
+                                "item_total": item_total,
+                            })
+                        except (ValueError, IndexError):
+                            pass # Ignorar si el parseo de la línea falla
 
                 # --- EXTRACCIÓN DE MONTO TOTAL ---
                 total_amount = None
@@ -469,12 +461,12 @@ def create_app() -> Flask:
 
                 # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
                 client_street_address = "Dirección no encontrada"
-                address_pattern = r'SPORTELLI GUSTAVO\.\s*(.*?)\s*Transp\.:\s*(.*?)\s*\((\d+)\)\s*ROSARIO'
+                address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
                 match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
                 if match_address:
                     try:
-                        street_and_number = match_address.group(1).strip().replace('\n', ' ')
-                        client_street_address = street_and_number
+                        client_street_address = match_address.group(1).strip()
+                        client_street_address = client_street_address.replace('*', '°')
                     except IndexError:
                         pass
 

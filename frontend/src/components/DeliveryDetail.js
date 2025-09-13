@@ -24,14 +24,16 @@ const DeliveryDetail = ({ delivery, onClose, onMarkAsCompleted }) => {
         <h3>{delivery.location_name}</h3>
         <p>{delivery.address}</p>
 
-        <h4>Packages:</h4>
-        <ul>
+        <h4>Product Items:</h4>
+        <div className="product-items-list">
           {delivery.items.map((item, idx) => (
-            <li key={idx}>
-              ({item.code}) {item.description} - Qty: {item.quantity}
-            </li>
+            <div key={idx} className="product-item-card">
+              <p><strong>Description:</strong> {item.description}</p>
+              <p><strong>Quantity:</strong> {item.quantity}</p>
+              <p><strong>Total:</strong> ${item.item_total ? item.item_total.toFixed(2) : 'N/A'}</p>
+            </div>
           ))}
-        </ul>
+        </div>
 
         <h4>Total Amount: ${delivery.total_amount}</h4>
 
