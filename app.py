@@ -227,17 +227,24 @@ def create_app() -> Flask:
         :param raw_ocr_text: Texto crudo del OCR
         :return: Diccionario con datos estructurados
         """
+        client_name = "Cliente no encontrado"
         address = "Dirección no encontrada"
         total_amount = None
         product_items = []
 
-        # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
-        address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
-        match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
-        if match_address:
+        # --- EXTRACCIÓN DE NOMBRE DE CLIENTE Y DIRECCIÓN ---
+        # Patrón para capturar el nombre del cliente y la dirección por separado
+        client_address_pattern = r'Sr/Sres\.\s*Cliente[^\n]+\n(.*?)\s*Ven\.:[^\n]*\n(.*?)\s*Transp\.:'
+        match_client_address = re.search(client_address_pattern, raw_ocr_text, re.DOTALL)
+
+        if match_client_address:
             try:
-                address = match_address.group(1).strip()
-                address = address.replace('\n', ' ').replace('*', '').replace('.', '')
+                client_name = match_client_address.group(1).strip()
+                address = match_client_address.group(2).strip().replace('\n', ' ')
+                # Limpieza adicional de la dirección
+                address = re.sub(r'(?<![a-zA-Z])N[\u00b0*\s]+', ' ', address, flags=re.IGNORECASE).strip()
+                address = address.replace('?', '').strip()
+                address = re.sub(r'\s{2,}', ' ', address).strip()
             except IndexError:
                 pass
 
@@ -251,30 +258,37 @@ def create_app() -> Flask:
                 pass
 
         # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
-        # Regex para capturar Código de Artículo, Cantidad y Descripción
-        # Asumiendo el formato: 45007 1 Caja AVENA TRADICIONAL 8 x 400 g 1.000,00 1.000,00
-        # product_line_pattern = r'(\d{5})\s+(\d+)\s+Caja\s+(.+?)\s+[\d.,]+\s+[\d.,]+'
-        # Refined regex to be more flexible with "Caja" and capture item_total
-        product_line_pattern = r'(\d{5})\s+(\d+)\s+(?:Caja|Paq|Unid|Kg|Lt|Gr)?\s*(.+?)\s+([\d.,]+)\s+([\d.,]+)'
+        # 1. Aislar el bloque de la tabla de productos
+        product_block_pattern = r'Articulo\s+Cantidad\s+Descripci.n[\s\S]+?(?=Subtotal|IMPORTE TOTAL)'
+        product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
+        
+        product_table_text = ""
+        if product_block_match:
+            product_table_text = product_block_match.group(0)
 
-        for line_match in re.finditer(product_line_pattern, raw_ocr_text):
-            try:
-                product_code = line_match.group(1)
-                quantity = int(line_match.group(2))
-                description = line_match.group(3).strip()
-                # Assuming the last captured group is item_total
-                item_total = float(line_match.group(5).replace('.', '').replace(',', '.'))
+        # 2. Usar un regex más estricto para las líneas de producto dentro del bloque
+        product_line_pattern = r'^(\d{5})\s+(\d+)\s+(.+?)\s+([\d.,]+(?:,\d{2})?)\s+([\d.,]+(?:,\d{2})?)$'
 
-                product_items.append({
-                    "product_code": product_code,
-                    "quantity": quantity,
-                    "description": description,
-                    "item_total": item_total,
-                })
-            except (ValueError, IndexError):
-                pass # Ignorar si el parseo de la línea falla
+        for line in product_table_text.split('\n'):
+            line_match = re.match(product_line_pattern, line.strip())
+            if line_match:
+                try:
+                    product_code = line_match.group(1)
+                    quantity = int(line_match.group(2))
+                    description = line_match.group(3).strip()
+                    item_total = float(line_match.group(5).replace('.', '').replace(',', '.'))
+
+                    product_items.append({
+                        "product_code": product_code,
+                        "quantity": quantity,
+                        "description": description,
+                        "item_total": item_total,
+                    })
+                except (ValueError, IndexError):
+                    pass
 
         return {
+            "client_name": client_name,
             "address": address,
             "total_amount": total_amount,
             "product_items": product_items,
@@ -343,60 +357,14 @@ def create_app() -> Flask:
                     # Procesar cada imagen
                     raw_ocr_text = extract_text_from_image(img_temp_path)
 
-                    # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
-                    product_items = []
-                    product_block_pattern = r'CUIT.*?(\d{2}-\d{8}-\d{1}).*?(Articulo.+?)(Peso neto total)'
-                    product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
-
-                    if product_block_match:
-                        product_table_text = product_block_match.group(2)
-                        product_line_pattern = r'(\d+)\s+(\d+)\s+([A-Z\s]+?)\s+([\d.,]+)'
-                        
-                        for line_match in re.finditer(product_line_pattern, product_table_text):
-                            try:
-                                product_code = line_match.group(1)
-                                quantity = int(line_match.group(2))
-                                description = line_match.group(3).strip()
-                                item_total = float(line_match.group(4).replace(',', '.'))
-
-                                product_items.append({
-                                    "product_code": product_code,
-                                    "quantity": quantity,
-                                    "description": description,
-                                    "item_total": item_total,
-                                })
-                            except (ValueError, IndexError):
-                                pass # Ignorar si el parseo de la línea falla
-
-                    # --- EXTRACCIÓN DE MONTO TOTAL ---
-                    total_amount = None
-                    total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
-                    match_total = re.search(total_amount_pattern, raw_ocr_text)
-                    if match_total:
-                        try:
-                            total_amount = float(match_total.group(1).replace('.', '').replace(',', '.'))
-                        except (ValueError, IndexError):
-                            pass
-
-                    # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
-                    client_street_address = "Dirección no encontrada"
-                    address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
-                    match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
-                    if match_address:
-                        try:
-                            client_street_address = match_address.group(1).strip()
-                            client_street_address = client_street_address.replace('*', '')
-                        except IndexError:
-                            pass
+                    # Extraer datos estructurados usando la función centralizada
+                    parsed_data = parse_invoice_text(raw_ocr_text)
+                    product_items = parsed_data.get("product_items", [])
+                    total_amount = parsed_data.get("total_amount")
+                    client_street_address = parsed_data.get("address", "Dirección no encontrada")
+                    client_name = parsed_data.get("client_name", "Cliente no encontrado")
 
                     cloudinary_url = upload_image_to_cloudinary(img_temp_path)
-                    parsed_data = parse_invoice_text(raw_ocr_text)
-                    if product_items:
-                        parsed_data['items'] = product_items
-                    if total_amount is not None:
-                        parsed_data['total_amount'] = total_amount
-                    if client_street_address != "Dirección no encontrada":
-                        parsed_data['address'] = client_street_address
                     
                     # --- GEOCODIFICACIÓN ---
                     full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
@@ -431,6 +399,7 @@ def create_app() -> Flask:
                         "raw_ocr_text": raw_ocr_text,
                         "product_items": product_items,
                         "total_amount": formatted_total_amount,
+                        "client_name": client_name,
                         "parsed_data": parsed_data,
                         "coordinates": coordinates,
                         "status": "processed"
@@ -440,60 +409,14 @@ def create_app() -> Flask:
                 # Procesar como imagen única
                 raw_ocr_text = extract_text_from_image(temp_path)
 
-                # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
-                product_items = []
-                product_block_pattern = r'CUIT.*?(\d{2}-\d{8}-\d{1}).*?(Articulo.+?)(Peso neto total)'
-                product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
-
-                if product_block_match:
-                    product_table_text = product_block_match.group(2)
-                    product_line_pattern = r'(\d+)\s+(\d+)\s+([A-Z\s]+?)\s+([\d.,]+)'
-                    
-                    for line_match in re.finditer(product_line_pattern, product_table_text):
-                        try:
-                            product_code = line_match.group(1)
-                            quantity = int(line_match.group(2))
-                            description = line_match.group(3).strip()
-                            item_total = float(line_match.group(4).replace(',', '.'))
-
-                            product_items.append({
-                                "product_code": product_code,
-                                "quantity": quantity,
-                                "description": description,
-                                "item_total": item_total,
-                            })
-                        except (ValueError, IndexError):
-                            pass # Ignorar si el parseo de la línea falla
-
-                # --- EXTRACCIÓN DE MONTO TOTAL ---
-                total_amount = None
-                total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
-                match_total = re.search(total_amount_pattern, raw_ocr_text)
-                if match_total:
-                    try:
-                        total_amount = float(match_total.group(1).replace('.', '').replace(',', '.'))
-                    except (ValueError, IndexError):
-                        pass
-
-                # --- EXTRACCIÓN DE DIRECCIÓN DEL CLIENTE ---
-                client_street_address = "Dirección no encontrada"
-                address_pattern = r'GUSTAVO\s*(\S.*?)\s*Transp[:.]'
-                match_address = re.search(address_pattern, raw_ocr_text, re.DOTALL)
-                if match_address:
-                    try:
-                        client_street_address = match_address.group(1).strip()
-                        client_street_address = client_street_address.replace('*', '°')
-                    except IndexError:
-                        pass
+                # Extraer datos estructurados usando la función centralizada
+                parsed_data = parse_invoice_text(raw_ocr_text)
+                product_items = parsed_data.get("product_items", [])
+                total_amount = parsed_data.get("total_amount")
+                client_street_address = parsed_data.get("address", "Dirección no encontrada")
+                client_name = parsed_data.get("client_name", "Cliente no encontrado")
 
                 cloudinary_url = upload_image_to_cloudinary(temp_path)
-                parsed_data = parse_invoice_text(raw_ocr_text)
-                if product_items:
-                    parsed_data['items'] = product_items
-                if total_amount is not None:
-                    parsed_data['total_amount'] = total_amount
-                if client_street_address != "Dirección no encontrada":
-                    parsed_data['address'] = client_street_address
 
                 # --- GEOCODIFICACIÓN ---
                 full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
@@ -528,6 +451,7 @@ def create_app() -> Flask:
                     "raw_ocr_text": raw_ocr_text,
                     "product_items": product_items,
                     "total_amount": formatted_total_amount,
+                    "client_name": client_name,
                     "parsed_data": parsed_data,
                     "coordinates": coordinates,
                     "status": "processed"

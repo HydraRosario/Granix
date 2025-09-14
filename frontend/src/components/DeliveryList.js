@@ -19,6 +19,7 @@ const DeliveryList = () => {
         {invoices.map((invoice) => (
           <li key={invoice.invoice_id} style={{ marginBottom: '10px', border: '1px solid #ccc', padding: '10px' }}>
             <strong>Invoice ID:</strong> {invoice.invoice_id}<br />
+            <strong>Client Name:</strong> {invoice.parsed_data.client_name || "Nombre no encontrado"}<br />
             {invoice.url && (
               <div>
                 <strong>Image:</strong> <a href={invoice.url} target="_blank" rel="noopener noreferrer">View Image</a>
