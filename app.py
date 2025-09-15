@@ -179,9 +179,13 @@ def create_app() -> Flask:
             app.logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
             address_string = DEFAULT_START_ADDRESS
 
+        city = "Rosario"
+        if "25 De Mayo" in address_string:
+            city = "Ibarlucea"
+
         try:
             # Construir una única cadena de consulta
-            full_query = f"{address_string}, Rosario, Santa Fe, Argentina"
+            full_query = f"{address_string}, {city}, Santa Fe, Argentina"
             location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
             
             if location:
@@ -245,6 +249,7 @@ def create_app() -> Flask:
                 address = re.sub(r'(?<![a-zA-Z])N[\u00b0*\s]+', ' ', address, flags=re.IGNORECASE).strip()
                 address = address.replace('?', '').strip()
                 address = re.sub(r'\s{2,}', ' ', address).strip()
+                address = address.title()
             except IndexError:
                 pass
 
@@ -267,7 +272,7 @@ def create_app() -> Flask:
             product_table_text = product_block_match.group(0)
 
         # 2. Usar un regex más estricto para las líneas de producto dentro del bloque
-        product_line_pattern = r'^(\d{5})\s+(\d+)\s+(.+?)\s+([\d.,]+(?:,\d{2})?)\s+([\d.,]+(?:,\d{2})?)$'
+        product_line_pattern = r'^(\d{4,5})\s+(\d+)\s+(.+?)\s+([\d.,]+(?:,\d{2})?)\s+([\d.,]+(?:,\d{2})?)$'
 
         for line in product_table_text.split('\n'):
             line_match = re.match(product_line_pattern, line.strip())
