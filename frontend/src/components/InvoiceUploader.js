@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
+import './InvoiceUploader.css';
 
 const InvoiceUploader = () => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const { isLoading, processInvoice } = useAppContext(); // processInvoice will be implemented later
+  const { isLoading, processInvoice } = useAppContext();
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -11,18 +12,33 @@ const InvoiceUploader = () => {
 
   const handleUpload = () => {
     if (selectedFile) {
-      processInvoice(selectedFile); // Call the context function
+      processInvoice(selectedFile);
+      setSelectedFile(null); // Reset after upload
     }
   };
 
   return (
-    <div>
+    <div className="invoice-uploader-card">
       <h2>Upload Invoice</h2>
-      <input type="file" onChange={handleFileChange} disabled={isLoading} />
-      <button onClick={handleUpload} disabled={isLoading}>
-        {isLoading ? 'Uploading...' : 'Upload'}
-      </button>
-      {/* We will display error messages here later */}
+      <div className="file-input-wrapper">
+        <label htmlFor="file-upload" className="file-input-label">
+          {selectedFile ? (
+            <span className="file-name">{selectedFile.name}</span>
+          ) : (
+            <span>Drag & drop a file or click to select</span>
+          )}
+        </label>
+        <input 
+          id="file-upload" 
+          type="file" 
+          className="file-input" 
+          onChange={handleFileChange} 
+          disabled={isLoading} 
+        />
+        <button onClick={handleUpload} disabled={!selectedFile || isLoading} className="button">
+          {isLoading ? 'Uploading...' : 'Upload'}
+        </button>
+      </div>
     </div>
   );
 };

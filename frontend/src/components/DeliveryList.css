@@ -1,16 +1,19 @@
 .invoice-list-container {
-  overflow-y: auto;
-  padding-right: 10px; /* For scrollbar */
+  padding-top: 1rem;
 }
 
-.invoice-item {
-  background-color: #fff;
-  border: 1px solid #dee2e6;
-  padding: 1rem;
+.invoice-card {
+  background-color: var(--border-color);
+  border: 1px solid var(--border-color);
   margin-bottom: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  text-align: left;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.invoice-card.expanded {
+  border-color: var(--accent-color-dark);
 }
 
 .invoice-header {
@@ -18,19 +21,93 @@
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  padding: 1rem 1.5rem;
+  transition: background-color 0.3s ease;
 }
 
-.invoice-header h4 {
-  margin: 0;
+.invoice-header:hover {
+  filter: brightness(0.97);
 }
 
-.invoice-details {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+.invoice-header-info span {
+  display: block;
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+.invoice-header-info span.client-name {
+  font-weight: 600;
+  color: var(--text-dark);
 }
 
 .indicator {
   font-size: 1.5rem;
   font-weight: bold;
+  color: var(--accent-color-dark);
+  transition: transform 0.3s ease;
+}
+
+.indicator.expanded {
+  transform: rotate(90deg);
+}
+
+.invoice-details {
+  padding: 0 1.5rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.7s ease-in-out, padding 0.5s ease-in-out;
+  background-color: transparent; /* Inherit color from parent */
+}
+
+.invoice-details.expanded {
+  max-height: 2000px;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-top: 1px solid var(--accent-color-vibrant);
+}
+
+/* Table styles */
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background-color: var(--card-bg); /* White background for the table */
+  border-radius: 8px;
+}
+
+.items-table th, .items-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.items-table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.items-table tbody tr:hover {
+  background-color: var(--hover-bg-light);
+}
+
+.items-table tfoot td {
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-dark);
+}
+
+/* OCR Textarea */
+.ocr-textarea {
+  width: 100%;
+  height: 120px;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  resize: vertical;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  background-color: var(--primary-bg);
 }
