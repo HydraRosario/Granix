@@ -47,7 +47,7 @@ const DeliveryList = () => {
                   </div>
                 </div>
                 <div className={`invoice-details ${isExpanded ? 'expanded' : ''}`}>
-                  <p><strong>ID de Factura:</strong> {invoice.invoice_id}</p>
+                  <p><strong>ID:</strong> {invoice.invoice_id}</p>
                   {invoice.parsed_data?.product_items?.length > 0 && (
                     <table className="items-table">
                       <thead>

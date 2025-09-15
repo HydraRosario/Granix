@@ -71,7 +71,7 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
-  background-color: var(--card-bg); /* White background for the table */
+  background-color: var(--hover-bg-light); /* Clearer peach */
   border-radius: 8px;
 }
 
@@ -86,16 +86,22 @@
   font-size: 0.85rem;
   text-transform: uppercase;
   color: var(--text-light);
+  background-color: #FFEFE0; /* Darker peach for header */
+}
+
+.items-table tbody tr:nth-child(even) {
+  background-color: #FFEFE0; /* Darker peach for even rows */
 }
 
 .items-table tbody tr:hover {
-  background-color: var(--hover-bg-light);
+  background-color: var(--border-color);
 }
 
 .items-table tfoot td {
   font-weight: 700;
   text-align: right;
   color: var(--text-dark);
+  background-color: #FFEFE0; /* Darker peach for footer */
 }
 
 /* OCR Textarea */

@@ -1,0 +1,83 @@
+[
+  {
+    "client_name": "MAZZONI VERONICA MARIELA",
+    "coordinates": {
+      "latitude": -33.1127837,
+      "longitude": -60.5529771
+    },
+    "invoice_id": "72efbfbd2a51454db97cfcfadd0dfa08",
+    "parsed_data": {
+      "address": "25 DE MAYO 1266",
+      "client_name": "MAZZONI VERONICA MARIELA",
+      "product_items": [
+        {
+          "description": "Bolsa SKARCHITOS GRANEL x 3,4 kg",
+          "item_total": 9440.97,
+          "product_code": "19666",
+          "quantity": 1
+        },
+        {
+          "description": "Caja GRANAGUA SANDWICH 8 x 600 g",
+          "item_total": 14192.79,
+          "product_code": "21336",
+          "quantity": 1
+        },
+        {
+          "description": "Caja SALVADO 3 EN 1 8x 720g",
+          "item_total": 17122.97,
+          "product_code": "24470",
+          "quantity": 1
+        },
+        {
+          "description": "Bolsas ARITOS FRUTALES x 2,5 kg",
+          "item_total": 17854.44,
+          "product_code": "41060",
+          "quantity": 2
+        },
+        {
+          "description": "Caja AVENA TRADICIONAL 8 x 400 g",
+          "item_total": 11642.93,
+          "product_code": "45007",
+          "quantity": 1
+        }
+      ],
+      "total_amount": 101793.47
+    },
+    "product_items": [
+      {
+        "description": "Bolsa SKARCHITOS GRANEL x 3,4 kg",
+        "item_total": 9440.97,
+        "product_code": "19666",
+        "quantity": 1
+      },
+      {
+        "description": "Caja GRANAGUA SANDWICH 8 x 600 g",
+        "item_total": 14192.79,
+        "product_code": "21336",
+        "quantity": 1
+      },
+      {
+        "description": "Caja SALVADO 3 EN 1 8x 720g",
+        "item_total": 17122.97,
+        "product_code": "24470",
+        "quantity": 1
+      },
+      {
+        "description": "Bolsas ARITOS FRUTALES x 2,5 kg",
+        "item_total": 17854.44,
+        "product_code": "41060",
+        "quantity": 2
+      },
+      {
+        "description": "Caja AVENA TRADICIONAL 8 x 400 g",
+        "item_total": 11642.93,
+        "product_code": "45007",
+        "quantity": 1
+      }
+    ],
+    "raw_ocr_text": "ALIMENTOS GRANIX\nAsociacion Arg. de los Adventistas del 7\u00b0 Dia\nMendoza N\u00b0 8895\n$2009DKR Rosario\nSanta Fe\nArgentina\nTel.: (011) 4730-8020/21\n\n0298-00425198\nLunes, 28 de Julio de 2025\n\nFactura Electronica\n\nCodigo \"001\"\nInicio de actividad\n12/10/1989\n\nCUIT 30-50097401-6, Ingresos Brutos: Convenio Multilateral, Jurisdicci\u00e9n sede:\n902 N\u00b0 ingresos brutos: 30500974016\n\nPagina 1\ncerspace 2. 1 |IIIIMIIMININTNNINN NNN MI\nIVA RESPONSABLE INSCRIPTO 19 8007 332390010298 0042519820 25 0926 000101793473\nSr/Sres. Cliente 733239 | Nota de pedido: 0298-00662957\nMAZZONI VERONICA MARIELA Ven.: 412-DENICOLAS EDUARDO DAMIAN TE: 34175170 of 7\n25 DE MAYO N\u00b0? 1266 Transp.: 451-Lop\u00e9z, Sebastian 20-34139683-3 \u2014\n(2142) IBARLUCEA S :\nSanta Fe, Argentina mercado Wy\nTel. 54 9 341 314-0317 Zona de Venta: 4122\nIVA Responsable inscripto\nContado pago electr\u00e9onico - Vencimiento: 28/07/2025 CUIT 27-26973291-7\nArticulo Cantidad Descripci\u00e9n Precio Importe\n2322 1 Bolsa BALONCITOS CHOCOLATADOS x 3 kg 11.837,41 11.837,41\n19666 1 Bolsa SKARCHITOS GRANEL x 3,4 kg 9.440,97 9.440,97\n21336 1 Caja GRANAGUA SANDWICH 8 x 600 g 14.192,79 14.192,79\n24470 1 Caja SALVADO 3 EN 1 8x 720g 17.122,97 17.122,97\n41060 2 Bolsas ARITOS FRUTALES x 2,5 kg 8.927,22 17.854,44\n45007 1 Caja AVENA TRADICIONAL 8 x 400 g 11.642,93 11.642,93\nPeso neto total: 25,16 Subtotal 82.091,51\nPeso bruto total: 26,64 LV.A. 21,00 % 17.239,22\nCantidad total: 7 bultos Percepcion I.V.A. RG (AFIP) 2408 3,00 % 2.462,74 101.793,47\nIMPORTE TOTAL $ 101.793,47\n\nPor disposici\u00e9n de AFIP no aceptamos pagos en efectivo por $10.000 o mas. Alimentos Granix informa que por extravio no son validos los Recibos N\u00b0 0252-00000301 al 0252-00000350\n\nTriplicado-Control interno\n[\n\nImpreso por: \"CFL\"\n\n1\nNumero de C.A.E. 75306061710227\nFecha de Vencimiento 07/08/2025\n\nA los efectos judiciales se fija la competencia en los tribunales de San Isidro, Buenos Aires - Emitir cheques a la orden de \"Asoc. Arg. de los Adv. del 7\u00b0 dia\"\n",
+    "status": "processed",
+    "total_amount": "$ 101.793,47",
+    "url": "https://res.cloudinary.com/dppaq3nlj/image/upload/v1757919588/granix-invoices/ykavpazvbphqbyngabp0.png"
+  }
+]
