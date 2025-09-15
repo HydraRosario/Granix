@@ -12,11 +12,10 @@ from PIL import Image
 import pytesseract
 from datetime import datetime
 import re
-from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
 from geopy.geocoders import Nominatim
 from flask_cors import CORS # Importa CORS
 from pdf2image import convert_from_path
+from contextlib import contextmanager
 
 # Dirección de respaldo para geocodificación fallida
 DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
@@ -24,46 +23,15 @@ DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
 # Carga variables de entorno desde .env si existe
 load_dotenv()
 
-@dataclass
-class Location:
-    """Modelo de datos para ubicaciones"""
-    name: str
-    address: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-
-
-@dataclass
-class OrderItem:
-    """Modelo de datos para items de pedido"""
-    product_code: str
-    description: str
-    quantity: int
-    unit_price: Optional[float] = None
-    total_price: Optional[float] = None
-
-
-@dataclass
-class Order:
-    """Modelo de datos para pedidos"""
-    order_id: str
-    items: List[OrderItem]
-    total_amount: float
-    order_date: Optional[datetime] = None
-
-
-@dataclass
-class Delivery:
-    """Modelo de datos para entregas"""
-    delivery_id: str
-    order: Order
-    location: Location
-    status: str
-    cloudinary_image_url: str
-    raw_ocr_text: str
-    uploaded_at: datetime
-    processed_at: Optional[datetime] = None
-
+@contextmanager
+def temp_file(suffix=""):
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        yield tmp.name
+    finally:
+        tmp.close() # Explicitly close the file handle
+        if os.path.exists(tmp.name):
+            os.unlink(tmp.name)
 
 def create_app() -> Flask:
     """
@@ -84,20 +52,21 @@ def create_app() -> Flask:
 
     # Inicializar Firebase Admin SDK si aún no está inicializado
     try:
-        if not firebase_admin._apps:
-            cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
-            if cred_path:
-                cred_path = cred_path.strip().strip('\'').strip("'")
+        firebase_admin.get_app() # Check if app is already initialized
+    except ValueError:
+        cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+        if cred_path:
+            cred_path = cred_path.strip().strip('\'').strip("\"")
 
-            if cred_path and os.path.isfile(cred_path):
-                cred = credentials.Certificate(cred_path)
-                firebase_admin.initialize_app(cred)
-                app.logger.info("Firebase Admin inicializado correctamente.")
-            else:
-                app.logger.warning(
-                    "FIREBASE_CREDENTIALS_PATH no está definida o el archivo no existe. "
-                    "Se omite la inicialización de Firebase por ahora."
-                )
+        if cred_path and os.path.isfile(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            app.logger.info("Firebase Admin inicializado correctamente.")
+        else:
+            app.logger.warning(
+                "FIREBASE_CREDENTIALS_PATH no está definida o el archivo no existe. "
+                "Se omite la inicialización de Firebase por ahora."
+            )
     except Exception as e:
         app.logger.error(f"Error al inicializar Firebase Admin: {e}")
 
@@ -131,6 +100,24 @@ def create_app() -> Flask:
         except Exception as e:
             app.logger.warning(f"Error eliminando archivo temporal {file_path}: {e}")
 
+    def _extract_text_from_pdf(pdf_path: str) -> str:
+        """
+        Extrae texto de un PDF convirtiendo cada página a imagen y aplicando OCR.
+        """
+        poppler_path = os.getenv("POPPLER_PATH")
+        if not poppler_path:
+            app.logger.error("POPPLER_PATH no está configurado en las variables de entorno.")
+            raise ValueError("La ruta a Poppler no está configurada.")
+
+        images = convert_from_path(pdf_path, poppler_path=poppler_path)
+        full_text = []
+        for i, image in enumerate(images):
+            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
+                img_temp_path = img_temp_file.name
+                image.save(img_temp_path, 'PNG')
+            full_text.append(extract_text_from_image(img_temp_path))
+        return "\n".join(full_text)
+
     def upload_image_to_cloudinary(file_obj) -> str:
         """
         Sube un archivo de imagen a Cloudinary y retorna la URL segura.
@@ -149,7 +136,7 @@ def create_app() -> Flask:
             app.logger.error(f"Error al subir a Cloudinary: {e}")
             raise
 
-    def save_invoice_data(invoice_id: str, data: Dict[str, Any]) -> None:
+    def save_invoice_data(invoice_id: str, data: dict) -> None:
         """
         Guarda datos de factura en Firestore.
         
@@ -157,15 +144,18 @@ def create_app() -> Flask:
         :param data: Datos a guardar
         :raises: ValueError si Firestore no está configurado
         """
-        if not firebase_admin._apps:
+        # Usar get_app() para verificar si Firebase está inicializado
+        try:
+            firebase_admin.get_app()
+        except ValueError:
             raise ValueError("Firebase Admin no está inicializado.")
         
         db = firestore.client()
         doc_ref = db.collection('invoices').document(invoice_id)
         doc_ref.set(data)
-        app.logger.info(f"Datos guardados en Firestore para invoice_id: {invoice_id}")
+        app.logger.info(f"[Invoice:{invoice_id}] Datos guardados en Firestore para invoice_id: {invoice_id}")
 
-    def geocode_address(address_string: str) -> Dict[str, Optional[float]]:
+    def geocode_address(address_string: str) -> dict:
         """
         Geocodifica una dirección usando Nominatim con un enfoque robusto.
 
@@ -224,7 +214,55 @@ def create_app() -> Flask:
                 app.logger.error(f"Error catastrófico al geocodificar la dirección por defecto: {e_default}")
                 return {"latitude": None, "longitude": None} # Fallback final
 
-    def parse_invoice_text(raw_ocr_text: str) -> Dict[str, Any]:
+    def _process_invoice_image_data(image_path: str) -> dict:
+        """
+        Procesa una imagen de factura: OCR, parseo, subida a Cloudinary, geocodificación y guardado en Firestore.
+        """
+        raw_ocr_text = extract_text_from_image(image_path)
+        parsed_data = parse_invoice_text(raw_ocr_text)
+        
+        client_street_address = parsed_data.get("address", "Dirección no encontrada")
+        client_name = parsed_data.get("client_name", "Cliente no encontrado")
+        total_amount = parsed_data.get("total_amount")
+        product_items = parsed_data.get("product_items", [])
+
+        cloudinary_url = upload_image_to_cloudinary(image_path)
+        
+        coordinates = geocode_address(client_street_address)
+
+        invoice_id = uuid4().hex
+        firestore_data = {
+            "cloudinaryImageUrl": cloudinary_url,
+            "uploadedAt": datetime.now(),
+            "rawOcrText": raw_ocr_text,
+            "parsedData": parsed_data,
+            "location": {
+                "address": parsed_data["address"],
+                "latitude": coordinates["latitude"],
+                "longitude": coordinates["longitude"]
+            },
+            "status": "processed",
+            "processedAt": datetime.now(),
+            "invoiceNumber": parsed_data.get("invoice_number", "No encontrado") # New field
+        }
+        save_invoice_data(invoice_id, firestore_data)
+        app.logger.info(f"[Invoice:{invoice_id}] Procesamiento completo para la factura.")
+        
+        formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
+        
+        return {
+            "invoice_id": invoice_id,
+            "url": cloudinary_url,
+            "raw_ocr_text": raw_ocr_text,
+            "product_items": product_items,
+            "total_amount": formatted_total_amount,
+            "client_name": client_name,
+            "parsed_data": parsed_data,
+            "coordinates": coordinates,
+            "status": "processed"
+        }
+
+    def parse_invoice_text(raw_ocr_text: str) -> dict:
         """
         Extrae datos estructurados del texto OCR de una factura de forma robusta.
 
@@ -235,6 +273,13 @@ def create_app() -> Flask:
         address = "Dirección no encontrada"
         total_amount = None
         product_items = []
+        invoice_number = "No encontrado" # New field
+
+        # --- EXTRACCIÓN DE NÚMERO DE FACTURA ---
+        invoice_number_pattern = r'(?:Factura|FACTURA)\s*N[°.]?\s*(\d{4}-\d{8})'
+        match_invoice_number = re.search(invoice_number_pattern, raw_ocr_text)
+        if match_invoice_number:
+            invoice_number = match_invoice_number.group(1)
 
         # --- EXTRACCIÓN DE NOMBRE DE CLIENTE Y DIRECCIÓN ---
         # Patrón para capturar el nombre del cliente y la dirección por separado
@@ -297,6 +342,7 @@ def create_app() -> Flask:
             "address": address,
             "total_amount": total_amount,
             "product_items": product_items,
+            "invoice_number": invoice_number,
         }
 
     def extract_text_from_image(image_input) -> str:
@@ -324,6 +370,8 @@ def create_app() -> Flask:
 
         try:
             img = img.convert("L")
+            # Add binarization step
+            img = img.point(lambda x: 0 if x < 180 else 255, '1')
         except Exception:
             pass
 
@@ -333,7 +381,7 @@ def create_app() -> Flask:
     @app.post("/process_invoice")
     def process_invoice():
         """
-        Endpoint para subir y procesar una imagen de factura.
+        Endpoint para subir y procesar una imagen o PDF de factura.
         """
         if "file" not in request.files:
             return jsonify(error="No se encontró el archivo en 'file'"), 400
@@ -343,135 +391,36 @@ def create_app() -> Flask:
             return jsonify(error="Archivo inválido o nombre vacío"), 400
 
         filename = secure_filename(file_obj.filename)
-        temp_path = None
         results = []
 
         try:
-            # Guardar temporalmente
-            with tempfile.NamedTemporaryFile(delete=False, suffix=filename) as temp_file:
-                file_obj.save(temp_file.name)
-                temp_path = temp_file.name
+            with temp_file(suffix=filename) as temp_path:
+                file_obj.save(temp_path)
 
-            if file_obj.mimetype == 'application/pdf':
-                images = convert_from_path(temp_path, poppler_path=r"C:\Users\HHHES\Documents\poppler\poppler-25.07.0\Library\bin")
-                for i, image in enumerate(images):
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
-                        image.save(img_temp_file.name, 'PNG')
-                        img_temp_path = img_temp_file.name
+                is_pdf = file_obj.mimetype == 'application/pdf' or filename.lower().endswith(".pdf")
+
+                if is_pdf:
+                    poppler_path = os.getenv("POPPLER_PATH")
+                    if not poppler_path:
+                        return jsonify(error="La ruta a Poppler no está configurada en las variables de entorno."), 500
                     
-                    # Procesar cada imagen
-                    raw_ocr_text = extract_text_from_image(img_temp_path)
-
-                    # Extraer datos estructurados usando la función centralizada
-                    parsed_data = parse_invoice_text(raw_ocr_text)
-                    product_items = parsed_data.get("product_items", [])
-                    total_amount = parsed_data.get("total_amount")
-                    client_street_address = parsed_data.get("address", "Dirección no encontrada")
-                    client_name = parsed_data.get("client_name", "Cliente no encontrado")
-
-                    cloudinary_url = upload_image_to_cloudinary(img_temp_path)
-                    
-                    # --- GEOCODIFICACIÓN ---
-                    full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
-                    geolocator = Nominatim(user_agent="granix-backend/1.0")
-                    location = geolocator.geocode(full_address, country_codes='ar', timeout=10)
-                    coordinates = {"latitude": None, "longitude": None}
-                    if location:
-                        coordinates["latitude"] = location.latitude
-                        coordinates["longitude"] = location.longitude
-                    
-                    invoice_id = uuid4().hex
-                    firestore_data = {
-                        "cloudinaryImageUrl": cloudinary_url,
-                        "uploadedAt": datetime.now(),
-                        "rawOcrText": raw_ocr_text,
-                        "parsedData": parsed_data,
-                        "location": {
-                            "address": parsed_data["address"],
-                            "latitude": coordinates["latitude"],
-                            "longitude": coordinates["longitude"]
-                        },
-                        "status": "processed",
-                        "processedAt": datetime.now()
-                    }
-                    save_invoice_data(invoice_id, firestore_data)
-                    
-                    formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
-                    
-                    results.append({
-                        "invoice_id": invoice_id,
-                        "url": cloudinary_url,
-                        "raw_ocr_text": raw_ocr_text,
-                        "product_items": product_items,
-                        "total_amount": formatted_total_amount,
-                        "client_name": client_name,
-                        "parsed_data": parsed_data,
-                        "coordinates": coordinates,
-                        "status": "processed"
-                    })
-                    cleanup_temp_file(img_temp_path)
-            else:
-                # Procesar como imagen única
-                raw_ocr_text = extract_text_from_image(temp_path)
-
-                # Extraer datos estructurados usando la función centralizada
-                parsed_data = parse_invoice_text(raw_ocr_text)
-                product_items = parsed_data.get("product_items", [])
-                total_amount = parsed_data.get("total_amount")
-                client_street_address = parsed_data.get("address", "Dirección no encontrada")
-                client_name = parsed_data.get("client_name", "Cliente no encontrado")
-
-                cloudinary_url = upload_image_to_cloudinary(temp_path)
-
-                # --- GEOCODIFICACIÓN ---
-                full_address = f'{client_street_address}, Rosario, Santa Fe, Argentina'
-                geolocator = Nominatim(user_agent="granix-backend/1.0")
-                location = geolocator.geocode(full_address, country_codes='ar', timeout=10)
-                coordinates = {"latitude": None, "longitude": None}
-                if location:
-                    coordinates["latitude"] = location.latitude
-                    coordinates["longitude"] = location.longitude
-
-                invoice_id = uuid4().hex
-                firestore_data = {
-                    "cloudinaryImageUrl": cloudinary_url,
-                    "uploadedAt": datetime.now(),
-                    "rawOcrText": raw_ocr_text,
-                    "parsedData": parsed_data,
-                    "location": {
-                        "address": parsed_data["address"],
-                        "latitude": coordinates["latitude"],
-                        "longitude": coordinates["longitude"]
-                    },
-                    "status": "processed",
-                    "processedAt": datetime.now()
-                }
-                save_invoice_data(invoice_id, firestore_data)
-
-                formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
-
-                results.append({
-                    "invoice_id": invoice_id,
-                    "url": cloudinary_url,
-                    "raw_ocr_text": raw_ocr_text,
-                    "product_items": product_items,
-                    "total_amount": formatted_total_amount,
-                    "client_name": client_name,
-                    "parsed_data": parsed_data,
-                    "coordinates": coordinates,
-                    "status": "processed"
-                })
+                    images = convert_from_path(temp_path, poppler_path=poppler_path)
+                    for i, image in enumerate(images):
+                        with temp_file(suffix=f"_page_{i+1}.png") as img_temp_path:
+                            image.save(img_temp_path, 'PNG')
+                            results.append(_process_invoice_image_data(img_temp_path))
+                elif file_obj.mimetype.startswith('image/') or filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    results.append(_process_invoice_image_data(temp_path))
+                else:
+                    return jsonify(error="Tipo de archivo no soportado. Solo se aceptan PDF o imágenes."), 400
 
             return jsonify(results), 200
 
         except ValueError as ve:
             return jsonify(error=str(ve)), 500
-        except Exception as e:
+        except Exception as _:
             app.logger.exception("Error procesando factura")
-            return jsonify(error="Error al procesar la factura"), 500
-        finally:
-            if temp_path:
-                cleanup_temp_file(temp_path)
+            return jsonify(error="Error al procesar la factura"), 500 # Use os.unlink directly as NamedTemporaryFile with delete=False was used
 
     @app.post("/process_delivery_report")
     def process_delivery_report():
@@ -486,26 +435,20 @@ def create_app() -> Flask:
             return jsonify(error="Archivo inválido o nombre vacío"), 400
 
         filename = secure_filename(file_obj.filename)
-        temp_path = None
         raw_ocr_text = ""
 
         try:
-            # Guardar temporalmente el archivo
-            with tempfile.NamedTemporaryFile(delete=False, suffix=filename) as temp_file:
-                file_obj.save(temp_file.name)
-                temp_path = temp_file.name
+            with temp_file(suffix=filename) as temp_path:
+                file_obj.save(temp_path)
 
-            if file_obj.mimetype == 'application/pdf':
-                images = convert_from_path(temp_path, poppler_path=r"C:\Users\HHHES\Documents\poppler\poppler-25.07.0\Library\bin")
-                for i, image in enumerate(images):
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
-                        image.save(img_temp_file.name, 'PNG')
-                        img_temp_path = img_temp_file.name
-                    
-                    raw_ocr_text += extract_text_from_image(img_temp_path) + "\n" # Concatenate text from all pages
-                    cleanup_temp_file(img_temp_path)
-            else:
-                raw_ocr_text = extract_text_from_image(temp_path)
+                is_pdf = file_obj.mimetype == 'application/pdf' or filename.lower().endswith(".pdf")
+
+                if is_pdf:
+                    raw_ocr_text = _extract_text_from_pdf(temp_path)
+                elif file_obj.mimetype.startswith('image/') or filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    raw_ocr_text = extract_text_from_image(temp_path)
+                else:
+                    return jsonify(error="Tipo de archivo no soportado. Solo se aceptan PDF o imágenes."), 400
 
             return jsonify({
                 "raw_ocr_text": raw_ocr_text,
@@ -514,12 +457,9 @@ def create_app() -> Flask:
 
         except ValueError as ve:
             return jsonify(error=str(ve)), 500
-        except Exception as e:
+        except Exception as _:
             app.logger.exception("Error procesando informe de entrega")
             return jsonify(error="Error al procesar el informe de entrega"), 500
-        finally:
-            if temp_path:
-                cleanup_temp_file(temp_path)
 
     return app
 
