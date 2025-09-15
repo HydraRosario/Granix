@@ -113,3 +113,34 @@ h2 {
     min-height: 400px;
   }
 }
+
+.processed-invoices-title {
+  font-size: 1.8rem; /* Slightly larger for a section title */
+  font-weight: 700;
+  color: var(--accent-color-dark);
+  margin-top: 2rem; /* Space above the title */
+  margin-bottom: 1rem;
+  text-align: left;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color); /* A subtle separator */
+}
+
+.no-invoices-message,
+.no-map-data-message {
+  text-align: center;
+  color: var(--text-light);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.no-invoices-message {
+  padding: 1rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.no-invoices-message p,
+.no-map-data-message p {
+  margin: 0.5rem 0;
+}

@@ -31,7 +31,10 @@ const DeliveryList = () => {
       <h2>Facturas Procesadas</h2>
       <div className="invoice-list-container">
         {invoices.length === 0 ? (
-          <p>No hay facturas procesadas aún.</p>
+          <div className="no-invoices-message">
+            <p>¡Aún no hay facturas procesadas! 🧾</p>
+            <p>Sube una para empezar. 🚀</p>
+          </div>
         ) : (
           invoices.map((invoice) => {
             const isExpanded = expandedInvoices.includes(invoice.invoice_id);

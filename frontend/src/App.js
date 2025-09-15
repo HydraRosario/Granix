@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import InvoiceUploader from './components/InvoiceUploader';
+import DeliveryReportUploader from './components/DeliveryReportUploader'; // New import
 import DeliveryList from './components/DeliveryList';
 import RouteMap from './components/RouteMap';
 import logo from './assets/logo.png';
@@ -13,6 +14,7 @@ function App() {
       </header>
       <div className="main-container">
         <div className="left-column">
+          <DeliveryReportUploader /> {/* New component */}
           <InvoiceUploader />
           <DeliveryList />
         </div>

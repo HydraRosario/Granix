@@ -1,0 +1,35 @@
+.collapsible-card {
+  background-color: var(--card-bg);
+  padding: 1rem 1.5rem; /* Reduced padding */
+  border-radius: 12px;
+  margin-bottom: 1rem; /* Reduced margin */
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+}
+
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0; /* Reduced padding */
+}
+
+.collapsible-header h2 {
+  margin: 0;
+  font-size: 1.2rem; /* Reduced font size */
+  color: var(--text-dark);
+}
+
+.arrow {
+  font-size: 1.2rem; /* Reduced font size */
+  transition: transform 0.3s ease;
+}
+
+.arrow.open {
+  transform: rotate(90deg);
+}
+
+.collapsible-content {
+  padding-top: 0.8rem; /* Reduced padding */
+}

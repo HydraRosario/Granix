@@ -27,7 +27,12 @@ const RouteMap = () => {
     }));
 
   if (!locations || locations.length === 0) {
-    return <p>No locations to display on the map.</p>;
+    return (
+      <div className="no-map-data-message">
+        <p>¡No hay ubicaciones para mostrar en el mapa! 🗺️</p>
+        <p>Sube una factura con dirección para verla aquí. 📍</p>
+      </div>
+    );
   }
 
   // Use the first location as the center, or a default if no locations
