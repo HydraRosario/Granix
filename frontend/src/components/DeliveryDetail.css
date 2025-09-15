@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,33 +12,40 @@
 }
 
 .modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 10px;
   max-width: 500px;
   width: 90%;
   position: relative;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 .close-button {
   position: absolute;
-  top: 10px;
-  right: 15px;
+  top: 15px;
+  right: 20px;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   cursor: pointer;
-  color: #aaa;
+  color: #888;
 }
 
 .modal-content h2 {
+  color: #FFDAB9;
   margin-top: 0;
+  border-bottom: 2px solid #FFDAB9;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .modal-content button {
   width: 100%;
   margin-top: 10px;
+  background-color: #FFDAB9;
+  color: #333;
+  font-weight: 600;
 }
 
 .product-items-list {
@@ -48,16 +55,17 @@
 }
 
 .product-item-card {
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
   margin-bottom: 10px;
 }
 
 .product-item-card p {
   margin: 0 0 5px 0;
   font-size: 0.9em;
+  color: #333;
 }
 
 .product-item-card p:last-child {

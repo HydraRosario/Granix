@@ -1,0 +1,36 @@
+.invoice-list-container {
+  overflow-y: auto;
+  padding-right: 10px; /* For scrollbar */
+}
+
+.invoice-item {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.invoice-header h4 {
+  margin: 0;
+}
+
+.invoice-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.indicator {
+  font-size: 1.5rem;
+  font-weight: bold;
+}

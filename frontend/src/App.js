@@ -2,15 +2,22 @@ import React from 'react';
 import './App.css';
 import InvoiceUploader from './components/InvoiceUploader';
 import DeliveryList from './components/DeliveryList';
-import RouteMap from './components/RouteMap'; // Keep RouteMap for future use
+import RouteMap from './components/RouteMap';
+import logo from './assets/logo.png';
 
 function App() {
   return (
     <div className="App">
-      <h1>Granix Logistics</h1>
-      <InvoiceUploader />
-      <DeliveryList />
-      <RouteMap />
+      <img src={logo} alt="Granix Logistics Logo" className="app-logo" />
+      <div className="main-container">
+        <div className="left-column">
+          <InvoiceUploader />
+          <DeliveryList />
+        </div>
+        <div className="right-column">
+          <RouteMap />
+        </div>
+      </div>
     </div>
   );
 }
