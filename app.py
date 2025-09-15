@@ -473,6 +473,54 @@ def create_app() -> Flask:
             if temp_path:
                 cleanup_temp_file(temp_path)
 
+    @app.post("/process_delivery_report")
+    def process_delivery_report():
+        """
+        Endpoint para subir y procesar un informe de entrega, extrayendo solo el texto OCR.
+        """
+        if "file" not in request.files:
+            return jsonify(error="No se encontró el archivo en 'file'"), 400
+
+        file_obj = request.files["file"]
+        if not file_obj or file_obj.filename == "":
+            return jsonify(error="Archivo inválido o nombre vacío"), 400
+
+        filename = secure_filename(file_obj.filename)
+        temp_path = None
+        raw_ocr_text = ""
+
+        try:
+            # Guardar temporalmente el archivo
+            with tempfile.NamedTemporaryFile(delete=False, suffix=filename) as temp_file:
+                file_obj.save(temp_file.name)
+                temp_path = temp_file.name
+
+            if file_obj.mimetype == 'application/pdf':
+                images = convert_from_path(temp_path, poppler_path=r"C:\Users\HHHES\Documents\poppler\poppler-25.07.0\Library\bin")
+                for i, image in enumerate(images):
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
+                        image.save(img_temp_file.name, 'PNG')
+                        img_temp_path = img_temp_file.name
+                    
+                    raw_ocr_text += extract_text_from_image(img_temp_path) + "\n" # Concatenate text from all pages
+                    cleanup_temp_file(img_temp_path)
+            else:
+                raw_ocr_text = extract_text_from_image(temp_path)
+
+            return jsonify({
+                "raw_ocr_text": raw_ocr_text,
+                "delivery_items": []
+            }), 200
+
+        except ValueError as ve:
+            return jsonify(error=str(ve)), 500
+        except Exception as e:
+            app.logger.exception("Error procesando informe de entrega")
+            return jsonify(error="Error al procesar el informe de entrega"), 500
+        finally:
+            if temp_path:
+                cleanup_temp_file(temp_path)
+
     return app
 
 

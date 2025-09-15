@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { uploadInvoice } from '../api/api'; // Import the API function
+import api from '../api/api'; // Import the API utility
 
 const AppContext = createContext();
 
@@ -12,7 +12,15 @@ export const AppProvider = ({ children }) => {
     setIsLoading(true);
     setError(null); // Clear previous errors
     try {
-      const newInvoices = await uploadInvoice(file);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/process_invoice', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      const newInvoices = response.data;
       setInvoices((prevInvoices) => [...prevInvoices, ...newInvoices]);
     } catch (err) {
       setError(err.message || 'An unknown error occurred during upload.');
