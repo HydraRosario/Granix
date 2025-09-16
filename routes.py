@@ -3,14 +3,9 @@ from flask import Blueprint, jsonify, request, current_app
 from werkzeug.utils import secure_filename
 from pdf2image import convert_from_path
 
-from services import (
-    geocode_address,
-    _process_invoice_image_data,
-    _extract_text_from_pdf,
-    extract_text_from_image,
-    parse_delivery_report_text,
-    temp_file_path,
-)
+from invoice_service import geocode_address, _process_invoice_image_data
+from delivery_service import parse_delivery_report_text
+from shared_utils import _extract_text_from_pdf, extract_text_from_image, temp_file_path
 
 transport_bp = Blueprint('transport_bp', __name__)
 
