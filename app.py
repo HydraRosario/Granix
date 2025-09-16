@@ -386,16 +386,53 @@ def create_app() -> Flask:
                 commercial_entity = "No encontrado"
                 delivery_address = "No encontrado"
 
-                # This regex looks for a street name (capitalized words), followed by "N°" or a number, then a comma and a city.
-                # It's designed to be more robust to variations in address format.
-                address_pattern = re.compile(r'([A-Z][a-zA-Z\s]*\s+(?:N[°.]?\s*\d+|\d+),\s*[A-Z][a-zA-Z\s]*.*)')
+                # Updated address pattern:
+                # - Starts with a capitalized word (street name)
+                # - Followed by optional "N°" or "N" (case-insensitive)
+                # - Followed by a number
+                # - Followed by optional additional address details, including "Rosario"
+                # This pattern aims to capture the entire address part.
+                address_pattern = re.compile(
+                    r'([A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*?\s+(?:N[°.]?\s*\d+|\d+)(?:,\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*)*)',
+                    re.IGNORECASE
+                )
+
                 address_match = address_pattern.search(rest_of_line_without_packages)
 
                 if address_match:
-                    delivery_address = address_match.group(0).strip()
+                    # Extract the potential address part
+                    potential_address = address_match.group(0).strip()
+
+                    # Separate commercial entity and delivery address
                     commercial_entity = rest_of_line_without_packages[:address_match.start()].strip()
+                    delivery_address = potential_address
+
+                    # --- Clean and format commercial_entity ---
+                    commercial_entity = commercial_entity.upper()
+                    # Remove standalone numbers or line prefixes from commercial_entity
+                    commercial_entity = re.sub(r'\b\d+\b', '', commercial_entity).strip() # Remove standalone numbers
+                    commercial_entity = re.sub(r'^\s*\d+\s*', '', commercial_entity).strip() # Remove leading numbers/prefixes
+
+                    # --- Clean and format delivery_address ---
+                    # Remove "N" or "N°" between street and number
+                    delivery_address = re.sub(r'\s+N[°.]?\s*', ' ', delivery_address, flags=re.IGNORECASE)
+
+                    # Format to title case, ensuring "Rosario" remains "Rosario"
+                    delivery_address_parts = []
+                    for part in delivery_address.split(','):
+                        part = part.strip()
+                        if part.lower() == "rosario":
+                            delivery_address_parts.append("Rosario")
+                        else:
+                            delivery_address_parts.append(part.title())
+                    delivery_address = ", ".join(delivery_address_parts)
+
                 else:
-                    commercial_entity = rest_of_line_without_packages # Fallback if address pattern not found
+                    # Fallback if address pattern not found
+                    commercial_entity = rest_of_line_without_packages.upper()
+                    # Apply cleaning for standalone numbers even in fallback
+                    commercial_entity = re.sub(r'\b\d+\b', '', commercial_entity).strip()
+                    commercial_entity = re.sub(r'^\s*\d+\s*', '', commercial_entity).strip()
 
                 delivery_items.append({
                     "type": item_type,

@@ -3,133 +3,133 @@
     "delivery_items": [
       {
         "commercial_entity": "",
-        "delivery_address": "BESSONE ERNESTO PEDRO San Juan N\u00b0 2096, Rosario",
+        "delivery_address": "Bessone Ernesto Pedro San Juan 2096, Rosario",
         "invoice_number": "P0298-00667696",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "ALFA SUPERMERCADOS S.R.L. Suc. 3",
-        "delivery_address": "De Febrero N\u00b0 2480, Rosario",
+        "commercial_entity": "ALFA SUPERMERCADOS S.R.L. SUC.",
+        "delivery_address": "De Febrero 2480, Rosario",
         "invoice_number": "P0298-00667697",
         "packages": 24,
         "type": "Fa"
       },
       {
-        "commercial_entity": "MILITO JUAN Alvear Esq.",
-        "delivery_address": "Zevallos N\u00b0 1501, Rosario",
+        "commercial_entity": "MILITO JUAN ALVEAR ESQ.",
+        "delivery_address": "Zevallos 1501, Rosario",
         "invoice_number": "P0298-00667698",
         "packages": 3,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "QUARANTA BARBARA ANA Balcarce N\u00b0 1306, Rosario",
+        "delivery_address": "Quaranta Barbara Ana Balcarce 1306, Rosario",
         "invoice_number": "P0298-00667699",
         "packages": 12,
         "type": "Fa"
       },
       {
-        "commercial_entity": "DOMINGUEZ ESTER 3",
-        "delivery_address": "De Febrero N\u00b0 2492, Rosario",
+        "commercial_entity": "",
+        "delivery_address": "Dominguez Ester 3",
         "invoice_number": "P0298-00667700",
         "packages": 12,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "HUANG WENDI Zeballos N\u00b0 2524, Rosario",
+        "delivery_address": "Huang Wendi Zeballos 2524, Rosario",
         "invoice_number": "P0298-00667701",
         "packages": 13,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "CAMPOSARCUNO ANGEL HUGO Balcarce N\u00b0 1186, Rosario",
+        "delivery_address": "Camposarcuno Angel Hugo Balcarce 1186, Rosario",
         "invoice_number": "P0298-00667702",
         "packages": 5,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "CATALDO SUSANA Alvear N\u00b0 1499, Rosario",
+        "delivery_address": "Cataldo Susana Alvear 1499, Rosario",
         "invoice_number": "P0298-00667703",
         "packages": 3,
         "type": "Fa"
       },
       {
-        "commercial_entity": "MARIOTTI FACUNDO TOMAS Suc.",
-        "delivery_address": "Mendoza N\u00b0 2116, Rosario",
+        "commercial_entity": "MARIOTTI FACUNDO TOMAS SUC.",
+        "delivery_address": "Mendoza 2116, Rosario",
         "invoice_number": "P0298-00667704",
         "packages": 5,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "OLGUIN NAZARENO Rodriguez N\u00b0 1269, Rosario",
+        "delivery_address": "Olguin Azareno Rodriguez 1269, Rosario",
         "invoice_number": "P0298-00667705",
         "packages": 4,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "INFANTI SHARO ELISEO San Juan N\u00b0 2591, Rosario",
+        "delivery_address": "Infanti Sharo Eliseo San Juan 2591, Rosario",
         "invoice_number": "P0298-00667706",
         "packages": 5,
         "type": "Fa"
       },
       {
-        "commercial_entity": "ZANCOCCHIA DANIEL OMAR 3",
-        "delivery_address": "De Febrero N\u00b0 2488, Rosario",
+        "commercial_entity": "",
+        "delivery_address": "Zancocchia Daniel Omar 3",
         "invoice_number": "P0298-00667707",
         "packages": 1,
         "type": "Fa"
       },
       {
         "commercial_entity": "EL PUENTE PRODUCCIONES S.R.",
-        "delivery_address": "L Santiago N\u00b0 1067, Rosario",
+        "delivery_address": "L Santiago 1067, Rosario",
         "invoice_number": "P0298-00667708",
         "packages": 19,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "HOYOS MARTIN ANTONIO Pasaje Tellier N\u00b0 1391, Rosario",
+        "delivery_address": "Hoyos Martin Antonio Pasaje Tellier 1391, Rosario",
         "invoice_number": "P0298-00667709",
         "packages": 12,
         "type": "Fa"
       },
       {
-        "commercial_entity": "10 CRISTOFARO RUBEN RAFAEL.",
-        "delivery_address": "Balcarce N\u00b0 1243, Rosario",
+        "commercial_entity": "CRISTOFARO RUBEN RAFAEL.",
+        "delivery_address": "Balcarce 1243, Rosario",
         "invoice_number": "P0298-006677",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "11",
-        "delivery_address": "BELLINGERI JOSE ALBERTO San Luis N\u00b0 2217, Rosario",
+        "commercial_entity": "",
+        "delivery_address": "Bellingeri Jose Alberto San Luis 2217, Rosario",
         "invoice_number": "P0298-006677",
         "packages": 2,
         "type": "Fa"
       },
       {
         "commercial_entity": "",
-        "delivery_address": "GALETTO MARIA FERNANDA Santiago N\u00b0 1085, Rosario",
+        "delivery_address": "Galetto Maria Fernanda Santiago 1085, Rosario",
         "invoice_number": "P0298-00667712",
         "packages": 4,
         "type": "Fa"
       },
       {
-        "commercial_entity": "13",
-        "delivery_address": "GUAN JINGJING San Luis N\u00b0 2351, Rosario",
+        "commercial_entity": "",
+        "delivery_address": "Guan Jingjing San Luis 2351, Rosario",
         "invoice_number": "P0298-006677",
         "packages": 13,
         "type": "Fa"
       },
       {
-        "commercial_entity": "CHEN JUNFENG Suc. 0002",
-        "delivery_address": "Mendoza N\u00b0 5050, Rosario",
+        "commercial_entity": "CHEN JUNFENG SUC.",
+        "delivery_address": "Mendoza 5050, Rosario",
         "invoice_number": "P0298-00667791",
         "packages": 15,
         "type": "Fa"
