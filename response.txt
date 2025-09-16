@@ -2,128 +2,142 @@
   "parsed_report_data": {
     "delivery_items": [
       {
-        "commercial_entity": "GARCIA",
-        "delivery_address": "OSCAR Artigas N\u00b0",
-        "invoice_number": "P0298-00668316",
-        "packages": 395,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "BARCHIESI",
-        "delivery_address": "ELBIO Ingeniero Thedy N\u00b0",
-        "invoice_number": "P0298-00668317",
-        "packages": 277,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "FANKHAUSER",
-        "delivery_address": "MARIA French N\u00b0",
-        "invoice_number": "P0298-00668318",
-        "packages": 889,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "FERRARO",
-        "delivery_address": "MARIA FABIANA Suc.",
-        "invoice_number": "P0298-00668319",
+        "commercial_entity": "",
+        "delivery_address": "BESSONE ERNESTO PEDRO San Juan N\u00b0 2096, Rosario",
+        "invoice_number": "P0298-00667696",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "CAMERLO",
-        "delivery_address": "MARCELO RODRIGO Genova N\u00b0",
-        "invoice_number": "P0298-00668320",
-        "packages": 1082,
+        "commercial_entity": "ALFA SUPERMERCADOS S.R.L. Suc. 3",
+        "delivery_address": "De Febrero N\u00b0 2480, Rosario",
+        "invoice_number": "P0298-00667697",
+        "packages": 24,
         "type": "Fa"
       },
       {
-        "commercial_entity": "VELA",
-        "delivery_address": "AYELEN CARLA Jose Ingenieros N\u00b0",
-        "invoice_number": "P0298-00668321",
-        "packages": 1702,
+        "commercial_entity": "MILITO JUAN Alvear Esq.",
+        "delivery_address": "Zevallos N\u00b0 1501, Rosario",
+        "invoice_number": "P0298-00667698",
+        "packages": 3,
         "type": "Fa"
       },
       {
-        "commercial_entity": "WANG",
-        "delivery_address": "LAN Suc.",
-        "invoice_number": "P0298-00668322",
+        "commercial_entity": "",
+        "delivery_address": "QUARANTA BARBARA ANA Balcarce N\u00b0 1306, Rosario",
+        "invoice_number": "P0298-00667699",
+        "packages": 12,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "DOMINGUEZ ESTER 3",
+        "delivery_address": "De Febrero N\u00b0 2492, Rosario",
+        "invoice_number": "P0298-00667700",
+        "packages": 12,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "HUANG WENDI Zeballos N\u00b0 2524, Rosario",
+        "invoice_number": "P0298-00667701",
+        "packages": 13,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "CAMPOSARCUNO ANGEL HUGO Balcarce N\u00b0 1186, Rosario",
+        "invoice_number": "P0298-00667702",
+        "packages": 5,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "CATALDO SUSANA Alvear N\u00b0 1499, Rosario",
+        "invoice_number": "P0298-00667703",
+        "packages": 3,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "MARIOTTI FACUNDO TOMAS Suc.",
+        "delivery_address": "Mendoza N\u00b0 2116, Rosario",
+        "invoice_number": "P0298-00667704",
+        "packages": 5,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "OLGUIN NAZARENO Rodriguez N\u00b0 1269, Rosario",
+        "invoice_number": "P0298-00667705",
+        "packages": 4,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "INFANTI SHARO ELISEO San Juan N\u00b0 2591, Rosario",
+        "invoice_number": "P0298-00667706",
+        "packages": 5,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "ZANCOCCHIA DANIEL OMAR 3",
+        "delivery_address": "De Febrero N\u00b0 2488, Rosario",
+        "invoice_number": "P0298-00667707",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "TORRES",
-        "delivery_address": "JOEL MARTIN Suc.",
-        "invoice_number": "P0298-00668323",
+        "commercial_entity": "EL PUENTE PRODUCCIONES S.R.",
+        "delivery_address": "L Santiago N\u00b0 1067, Rosario",
+        "invoice_number": "P0298-00667708",
+        "packages": 19,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "",
+        "delivery_address": "HOYOS MARTIN ANTONIO Pasaje Tellier N\u00b0 1391, Rosario",
+        "invoice_number": "P0298-00667709",
+        "packages": 12,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "10 CRISTOFARO RUBEN RAFAEL.",
+        "delivery_address": "Balcarce N\u00b0 1243, Rosario",
+        "invoice_number": "P0298-006677",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "UGARTE",
-        "delivery_address": "NORMA BEATRIZ Velez Sarsfield N\u00b0",
-        "invoice_number": "P0298-00668324",
-        "packages": 260,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "CASTOLIDI",
-        "delivery_address": "JUAN MARIA Suc.",
-        "invoice_number": "P0298-00668325",
-        "packages": 1,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "POLIZZ|",
-        "delivery_address": "DANIELA BEATRIZ Drago N\u00b0",
-        "invoice_number": "P0298-00668326",
-        "packages": 1231,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "WENG",
-        "delivery_address": "BIHUI Del Valle Iberlucea N\u00b0",
-        "invoice_number": "P0298-00668327",
-        "packages": 1230,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "ALVAREZ",
-        "delivery_address": "CRISTIAN MARCELO Nansen N\u00b0",
-        "invoice_number": "P0298-00668328",
-        "packages": 509,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "ZHENG",
-        "delivery_address": "ZHIYONG Reconquista N\u00b0",
-        "invoice_number": "P0298-00668329",
-        "packages": 742,
-        "type": "Fa"
-      },
-      {
-        "commercial_entity": "LANZINI",
-        "delivery_address": "MARIANO ANDRES Suc.",
-        "invoice_number": "P0298-00668330",
+        "commercial_entity": "11",
+        "delivery_address": "BELLINGERI JOSE ALBERTO San Luis N\u00b0 2217, Rosario",
+        "invoice_number": "P0298-006677",
         "packages": 2,
         "type": "Fa"
       },
       {
-        "commercial_entity": "QUINTERO",
-        "delivery_address": "VERONICA SILVANA Jose Ingenieros N\u00b0",
-        "invoice_number": "P0298-00668331",
-        "packages": 1343,
+        "commercial_entity": "",
+        "delivery_address": "GALETTO MARIA FERNANDA Santiago N\u00b0 1085, Rosario",
+        "invoice_number": "P0298-00667712",
+        "packages": 4,
         "type": "Fa"
       },
       {
-        "commercial_entity": "WANG",
-        "delivery_address": "TIANFA Genova N\u00b0",
-        "invoice_number": "P0298-00668461",
-        "packages": 1731,
+        "commercial_entity": "13",
+        "delivery_address": "GUAN JINGJING San Luis N\u00b0 2351, Rosario",
+        "invoice_number": "P0298-006677",
+        "packages": 13,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "CHEN JUNFENG Suc. 0002",
+        "delivery_address": "Mendoza N\u00b0 5050, Rosario",
+        "invoice_number": "P0298-00667791",
+        "packages": 15,
         "type": "Fa"
       }
     ],
-    "total_invoices": 17,
-    "total_packages_summary": 131,
+    "total_invoices": 19,
+    "total_packages_summary": 154,
     "total_remitos": 0
   },
-  "raw_ocr_text": "Impreso el: 09/09/2025 13:24:32 Pagina 1\n\nInforme para Reparto\n(Por emisi\u00e9n)\n\nLop\u00e9z, Sebastian [Transportista 451] {ASI_PREPARARCARGASSQL-25.09e)\nod Nume ro Entidad Comercial Domicilio de Entrega Bultos\n\nMov de Emisi\u00e9n\n\nFa P0298-00668316 GARCIA OSCAR Artigas N\u00b0 395, Rosario 4\nFa P0298-00668317 BARCHIESI ELBIO Ingeniero Thedy N\u00b0 277, Rosario 3\nFa P0298-00668318 FANKHAUSER MARIA French N\u00b0 889, Rosario 2\nFa P0298-00668319 FERRARO MARIA FABIANA Suc. 0001 Juan Jose Paso N\u00b0 712, Rosario 1\nFa P0298-00668320 CAMERLO MARCELO RODRIGO Genova N\u00b0 1082, Rosario 13\nFa P0298-00668321 VELA AYELEN CARLA Jose Ingenieros N\u00b0 1702, Rosario 7\nFa P0298-00668322 WANG LAN Suc. 0001 Av. Genova N\u00b0 1171, Rosario 6\nFa P0298-00668323 TORRES JOEL MARTIN Suc. 0001 Genova N\u00b0 1485, Rosario 8\nFa P0298-00668324 UGARTE NORMA BEATRIZ Velez Sarsfield N\u00b0 260, Rosario 2\nFa P0298-00668325 CASTOLIDI JUAN MARIA Suc. 0001 Cordiviola N\u00b0 770, Rosario 3\nFa P0298-00668326 POLIZZ| DANIELA BEATRIZ Drago N\u00b0 1231, Rosario 2\nFa P0298-00668327 WENG BIHUI Del Valle Iberlucea N\u00b0 1230, Rosario 6\nFa P0298-00668328 ALVAREZ CRISTIAN MARCELO Nansen N\u00b0 509, Rosario 41\nFa P0298-00668329 ZHENG ZHIYONG Reconquista N\u00b0 742, Rosario 5\nFa P0298-00668330 LANZINI MARIANO ANDRES Suc. 0002 Av. Alberdi N\u00b0 370, Rosario 6\nFa P0298-00668331 QUINTERO VERONICA SILVANA Jose Ingenieros N\u00b0 1343, Rosario 5\nFa P0298-00668461 WANG TIANFA Genova N\u00b0 1731, Rosario 7\n\nCantidad de Facturas: 17 Cantidad de Remitos: 0 Bultos: 131\n\n"
+  "raw_ocr_text": "Impreso el: 03/09/2025 09:43:22 Pagina 1\nm Informe para Reparto 8\n(Por emisi\u00e9n)\nLop\u00e9z, Sebastian [Transportista 451] {ASI_PREPARARCARGASSQL-25.09b)\n\u2018od Numero Entidad Comercial Domicilio de Entrega Bultos\n\nMov de Emisi\u00e9n\n\nFa P0298-00667696 BESSONE ERNESTO PEDRO San Juan N\u00b0 2096, Rosario 1\nFa P0298-00667697 ALFA SUPERMERCADOS S.R.L. Suc. 3 De Febrero N\u00b0 2480, Rosario 24\n0001\nFa P0298-00667698 MILITO JUAN Alvear Esq. Zevallos N\u00b0 1501, Rosario 3\nFa P0298-00667699 QUARANTA BARBARA ANA Balcarce N\u00b0 1306, Rosario 12\nFa P0298-00667700 DOMINGUEZ ESTER 3 De Febrero N\u00b0 2492, Rosario 12\nFa P0298-00667701 HUANG WENDI Zeballos N\u00b0 2524, Rosario 13\nFa P0298-00667702 CAMPOSARCUNO ANGEL HUGO Balcarce N\u00b0 1186, Rosario 5\nFa P0298-00667703 CATALDO SUSANA Alvear N\u00b0 1499, Rosario 3\nFa P0298-00667704 MARIOTTI FACUNDO TOMAS Suc. Mendoza N\u00b0 2116, Rosario 5\n0002\nFa P0298-00667705 OLGUIN NAZARENO Rodriguez N\u00b0 1269, Rosario 4\nFa P0298-00667706 INFANTI SHARO ELISEO San Juan N\u00b0 2591, Rosario 5\nFa P0298-00667707 ZANCOCCHIA DANIEL OMAR 3 De Febrero N\u00b0 2488, Rosario 1\nFa P0298-00667708 EL PUENTE PRODUCCIONES S.R.L Santiago N\u00b0 1067, Rosario 19\nSuc. 0002\nFa P0298-00667709 HOYOS MARTIN ANTONIO Pasaje Tellier N\u00b0 1391, Rosario 12\nFa P0298-006677 10 CRISTOFARO RUBEN RAFAEL. Balcarce N\u00b0 1243, Rosario 1\nFa P0298-006677 11 BELLINGERI JOSE ALBERTO San Luis N\u00b0 2217, Rosario 2\nFa P0298-00667712 GALETTO MARIA FERNANDA Santiago N\u00b0 1085, Rosario 4\nFa P0298-006677 13 GUAN JINGJING San Luis N\u00b0 2351, Rosario 13\nFa P0298-00667791 CHEN JUNFENG Suc. 0002 Mendoza N\u00b0 5050, Rosario 15\nCantidad de Facturas: 19 Cantidad de Remitos: 0 Bultos: 154\n"
 }

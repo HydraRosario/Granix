@@ -356,11 +356,9 @@ def create_app() -> Flask:
         total_remitos = 0
         total_packages_summary = 0
 
-        # Regex to capture each delivery item line
-        # Fa P0298-00668316 GARCIA OSCAR Artigas N° 395, Rosario 4
-        # (Fa|Re) (InvoiceNumber) (CommercialEntity) (DeliveryAddress) (Bultos)
-        item_pattern = re.compile(
-            r'(Fa|Re)\s+([A-Z0-9-]+)\s+([^,]+?)\s+([^0-9]+?)\s+(\d+)'
+        # Regex to capture Type, InvoiceNumber, and the rest of the line
+        item_line_pattern = re.compile(
+            r'(Fa|Re)\s+([A-Z0-9-]+)\s+(.*)'
         )
 
         # Regex to capture summary at the end
@@ -370,13 +368,34 @@ def create_app() -> Flask:
 
         lines = raw_ocr_text.split('\n')
         for line in lines:
-            item_match = item_pattern.search(line)
+            item_match = item_line_pattern.search(line)
             if item_match:
                 item_type = item_match.group(1)
                 invoice_number = item_match.group(2)
-                commercial_entity = item_match.group(3).strip()
-                delivery_address = item_match.group(4).strip()
-                packages = int(item_match.group(5))
+                rest_of_line = item_match.group(3).strip()
+
+                # Extract packages from the end of rest_of_line
+                packages_match = re.search(r'(\d+)$', rest_of_line)
+                packages = 0
+                if packages_match:
+                    packages = int(packages_match.group(1))
+                    rest_of_line_without_packages = rest_of_line[:-len(packages_match.group(0))].strip()
+                else:
+                    rest_of_line_without_packages = rest_of_line
+
+                commercial_entity = "No encontrado"
+                delivery_address = "No encontrado"
+
+                # This regex looks for a street name (capitalized words), followed by "N°" or a number, then a comma and a city.
+                # It's designed to be more robust to variations in address format.
+                address_pattern = re.compile(r'([A-Z][a-zA-Z\s]*\s+(?:N[°.]?\s*\d+|\d+),\s*[A-Z][a-zA-Z\s]*.*)')
+                address_match = address_pattern.search(rest_of_line_without_packages)
+
+                if address_match:
+                    delivery_address = address_match.group(0).strip()
+                    commercial_entity = rest_of_line_without_packages[:address_match.start()].strip()
+                else:
+                    commercial_entity = rest_of_line_without_packages # Fallback if address pattern not found
 
                 delivery_items.append({
                     "type": item_type,
