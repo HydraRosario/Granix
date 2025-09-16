@@ -2,6 +2,8 @@ import os
 from flask import Blueprint, jsonify, request, current_app
 from werkzeug.utils import secure_filename
 from pdf2image import convert_from_path
+from datetime import datetime
+from firebase_admin import firestore
 
 from invoice_service import _process_invoice_image_data
 from delivery_service import parse_delivery_report_text
@@ -73,8 +75,7 @@ def process_invoice():
 @transport_bp.post("/process_delivery_report")
 def process_delivery_report():
     """
-    Endpoint para subir y procesar un informe de entrega, extrayendo solo el texto OCR
-    y la información estructurada del informe.
+    Procesa un informe de reparto, optimiza la ruta y guarda el resultado.
     """
     if "file" not in request.files:
         return jsonify(error="No se encontró el archivo en 'file'"), 400
@@ -99,7 +100,25 @@ def process_delivery_report():
             else:
                 return jsonify(error="Tipo de archivo no soportado. Solo se aceptan PDF o imágenes."), 400
 
+        # El servicio ahora parsea, enriquece y optimiza la ruta
         parsed_report_data = parse_delivery_report_text(raw_ocr_text)
+
+        # Guardar la ruta optimizada en Firestore si existe
+        optimized_route = parsed_report_data.get('optimized_route')
+        if optimized_route:
+            try:
+                db = firestore.client()
+                today_str = datetime.now().strftime("%Y-%m-%d")
+                route_doc_ref = db.collection('daily_routes').document(today_str)
+                
+                route_data = {
+                    'optimized_route': optimized_route,
+                    'created_at': firestore.SERVER_TIMESTAMP
+                }
+                route_doc_ref.set(route_data, merge=True) # merge=True para no sobrescribir si ya existe
+                current_app.logger.info(f"Ruta optimizada para el {today_str} guardada en Firestore.")
+            except Exception as e:
+                current_app.logger.error(f"Error al guardar la ruta optimizada en Firestore: {e}")
 
         return jsonify({
             "raw_ocr_text": raw_ocr_text,
