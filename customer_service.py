@@ -36,10 +36,7 @@ class CustomerService:
 
     def upsert_customer(self, data: dict, source_type: str):
         """
-        Crea o actualiza un cliente en Firestore basado en la fuente de datos.
-        - `address` es la clave principal.
-        - `delivery_report` actualiza `commercial_name` e `delivery_instructions`.
-        - `invoice` actualiza `client_name`.
+        Crea o actualiza un cliente en Firestore, evitando escrituras innecesarias.
         """
         address = data.get('delivery_address') or data.get('address')
         if not address or address == 'No encontrado':
@@ -48,30 +45,34 @@ class CustomerService:
         existing_customer = self.find_customer_by_address(address)
 
         if existing_customer:
-            # --- Cliente Existente: Actualizar campos específicos --- 
-            logger.info(f"Cliente encontrado en Firestore ({existing_customer['id']}). Actualizando desde '{source_type}'.")
-            update_data = {
-                'last_updated_at': firestore.SERVER_TIMESTAMP
-            }
-            
+            logger.info(f"Cliente encontrado en Firestore ({existing_customer['id']}). Verificando actualizaciones desde '{source_type}'.")
+            update_data = {}
+
             if source_type == 'delivery_report':
-                if data.get('commercial_entity'):
-                    update_data['commercial_name'] = data['commercial_entity']
-                if data.get('delivery_instructions') and data['delivery_instructions'] != 'No encontrado':
-                    update_data['delivery_instructions'] = data['delivery_instructions']
+                new_commercial_name = data.get('commercial_entity')
+                if new_commercial_name and new_commercial_name != existing_customer.get('commercial_name'):
+                    update_data['commercial_name'] = new_commercial_name
+
+                new_instructions = data.get('delivery_instructions')
+                if new_instructions and new_instructions != 'No encontrado' and new_instructions != existing_customer.get('delivery_instructions'):
+                    update_data['delivery_instructions'] = new_instructions
             
             elif source_type == 'invoice':
-                if data.get('client_name'):
-                    update_data['client_name'] = data['client_name']
+                new_client_name = data.get('client_name')
+                if new_client_name and new_client_name != existing_customer.get('client_name'):
+                    update_data['client_name'] = new_client_name
 
-            if len(update_data) > 1: # Si hay algo más que el timestamp para actualizar
+            if update_data:
+                update_data['last_updated_at'] = firestore.SERVER_TIMESTAMP
                 self.collection_ref.document(existing_customer['id']).update(update_data)
-                logger.info(f"Datos actualizados para el cliente: {update_data}")
-
-            # Devolver el estado completo del cliente
-            updated_customer_data = self.collection_ref.document(existing_customer['id']).get().to_dict()
-            updated_customer_data['id'] = existing_customer['id']
-            return updated_customer_data
+                logger.info(f"Cambios detectados. Actualizando cliente: {update_data}")
+                # Devolver el estado actualizado del cliente
+                updated_customer_data = self.collection_ref.document(existing_customer['id']).get().to_dict()
+                updated_customer_data['id'] = existing_customer['id']
+                return updated_customer_data
+            else:
+                logger.info("No se detectaron cambios. Se omite la escritura en la base de datos.")
+                return existing_customer
 
         else:
             # --- Cliente Nuevo: Crear registro --- 
