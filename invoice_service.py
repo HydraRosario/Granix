@@ -2,9 +2,8 @@ import os
 import re
 from datetime import datetime
 from uuid import uuid4
-from geopy.geocoders import Nominatim
 import logging
-
+from customer_service import CustomerService
 from shared_utils import extract_text_from_image, upload_image_to_cloudinary, save_invoice_data
 
 # Configurar logger para invoice_service.py
@@ -15,68 +14,6 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-# Dirección de respaldo para geocodificación fallida
-DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
-
-def geocode_address(address_string: str) -> dict:
-    """
-    Geocodifica una dirección usando Nominatim con un enfoque robusto.
-
-    :param address_string: Dirección a geocodificar
-    :return: Diccionario con latitude y longitude
-    """
-    geolocator = Nominatim(user_agent="granix-backend/1.0")
-    
-    # Usar la dirección por defecto si la dirección proporcionada es None o vacía
-    if not address_string:
-        logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
-        address_string = DEFAULT_START_ADDRESS
-
-    city = "Rosario"
-    if "25 De Mayo" in address_string:
-        city = "Ibarlucea"
-
-    try:
-        # Construir una única cadena de consulta
-        full_query = f"{address_string}, {city}, Santa Fe, Argentina"
-        location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
-        
-        if location:
-            return {
-                "latitude": location.latitude,
-                "longitude": location.longitude
-            }
-        else:
-            logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Usando dirección por defecto.")
-            # Si Nominatim no encuentra la dirección, usar la dirección por defecto
-            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
-            if location:
-                return {
-                    "latitude": location.latitude,
-                    "longitude": location.longitude
-                }
-            else:
-                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
-                return {"latitude": None, "longitude": None} # Fallback final
-    except Exception as e:
-        logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}. Usando dirección por defecto.")
-        # En caso de error, intentar geocodificar la dirección por defecto
-        try:
-            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
-            if location:
-                return {
-                    "latitude": location.latitude,
-                    "longitude": location.longitude
-                }
-            else:
-                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
-                return {"latitude": None, "longitude": None} # Fallback final
-        except Exception as e_default:
-            logger.error(f"Error catastrófico al geocodificar la dirección por defecto: {e_default}")
-            return {"latitude": None, "longitude": None} # Fallback final
-
 def _process_invoice_image_data(image_path: str) -> dict:
     """
     Procesa una imagen de factura: OCR, parseo, subida a Cloudinary, geocodificación y guardado en Firestore.
@@ -84,14 +21,19 @@ def _process_invoice_image_data(image_path: str) -> dict:
     raw_ocr_text = extract_text_from_image(image_path)
     parsed_data = parse_invoice_text(raw_ocr_text)
     
-    client_street_address = parsed_data.get("address", "Dirección no encontrada")
     client_name = parsed_data.get("client_name", "Cliente no encontrado")
     total_amount = parsed_data.get("total_amount")
     product_items = parsed_data.get("product_items", [])
 
     cloudinary_url = upload_image_to_cloudinary(image_path)
     
-    coordinates = geocode_address(client_street_address)
+    # --- Integración con CustomerService ---
+    customer_service = CustomerService()
+    customer_data = customer_service.upsert_customer(parsed_data)
+    
+    coordinates = {"latitude": None, "longitude": None}
+    if customer_data and customer_data.get('coordinates'):
+        coordinates = customer_data['coordinates']
 
     invoice_id = uuid4().hex
     firestore_data = {
@@ -100,13 +42,13 @@ def _process_invoice_image_data(image_path: str) -> dict:
         "rawOcrText": raw_ocr_text,
         "parsedData": parsed_data,
         "location": {
-            "address": parsed_data["address"],
+            "address": parsed_data.get("address", "No encontrado"),
             "latitude": coordinates["latitude"],
             "longitude": coordinates["longitude"]
         },
         "status": "processed",
         "processedAt": datetime.now(),
-        "invoiceNumber": parsed_data.get("invoice_number", "No encontrado") # New field
+        "invoiceNumber": parsed_data.get("invoice_number", "No encontrado")
     }
     save_invoice_data(invoice_id, firestore_data)
     logger.info(f"[Invoice:{invoice_id}] Procesamiento completo para la factura.")
@@ -207,3 +149,27 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
         "product_items": product_items,
         "invoice_number": invoice_number,
     }
+
+def process_invoices(image_paths: list) -> list:
+    """
+    Procesa una lista de rutas de imágenes de facturas.
+    """
+    processed_invoices = []
+    for image_path in image_paths:
+        try:
+            result = _process_invoice_image_data(image_path)
+            processed_invoices.append(result)
+        except Exception as e:
+            logger.error(f"Error procesando la factura {image_path}: {e}")
+            processed_invoices.append({
+                "invoice_id": None,
+                "url": None,
+                "raw_ocr_text": "",
+                "product_items": [],
+                "total_amount": None,
+                "client_name": "Error en procesamiento",
+                "parsed_data": {},
+                "coordinates": {"latitude": None, "longitude": None},
+                "status": "error"
+            })
+    return processed_invoices

@@ -15,6 +15,7 @@ from pdf2image import convert_from_path
 from contextlib import contextmanager
 import io
 import logging
+from geopy.geocoders import Nominatim
 
 # Configurar logger para shared_utils.py
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ logger.addHandler(handler)
 
 # Carga variables de entorno desde .env si existe
 load_dotenv()
+
+# Dirección de respaldo para geocodificación fallida
+DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
 
 # Configurar Cloudinary (se asume que las variables de entorno ya están cargadas)
 cloudinary.config(
@@ -55,6 +59,64 @@ except ValueError:
 except Exception as e:
     logger.error(f"Error al inicializar Firebase Admin en shared_utils.py: {e}")
 
+def geocode_address(address_string: str) -> dict:
+    """
+    Geocodifica una dirección usando Nominatim con un enfoque robusto.
+
+    :param address_string: Dirección a geocodificar
+    :return: Diccionario con latitude y longitude
+    """
+    geolocator = Nominatim(user_agent="granix-backend/1.0")
+    
+    # Usar la dirección por defecto si la dirección proporcionada es None o vacía
+    if not address_string:
+        logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
+        address_string = DEFAULT_START_ADDRESS
+
+    city = "Rosario"
+    if "25 De Mayo" in address_string:
+        city = "Ibarlucea"
+
+    try:
+        # Construir una única cadena de consulta
+        full_query = f"{address_string}, {city}, Santa Fe, Argentina"
+        location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
+        
+        if location:
+            return {
+                "latitude": location.latitude,
+                "longitude": location.longitude
+            }
+        else:
+            logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Usando dirección por defecto.")
+            # Si Nominatim no encuentra la dirección, usar la dirección por defecto
+            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
+            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+            if location:
+                return {
+                    "latitude": location.latitude,
+                    "longitude": location.longitude
+                }
+            else:
+                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
+                return {"latitude": None, "longitude": None} # Fallback final
+    except Exception as e:
+        logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}. Usando dirección por defecto.")
+        # En caso de error, intentar geocodificar la dirección por defecto
+        try:
+            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
+            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+            if location:
+                return {
+                    "latitude": location.latitude,
+                    "longitude": location.longitude
+                }
+            else:
+                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
+                return {"latitude": None, "longitude": None} # Fallback final
+        except Exception as e_default:
+            logger.error(f"Error catastrófico al geocodificar la dirección por defecto: {e_default}")
+            return {"latitude": None, "longitude": None} # Fallback final
 
 @contextmanager
 def temp_file_path(suffix=""):

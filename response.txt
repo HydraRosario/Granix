@@ -10,9 +10,9 @@
         "type": "Fa"
       },
       {
-        "commercial_entity": "EL EMPORIO DE LAS GOLOSINAS AV.",
+        "commercial_entity": "EL EMPORIO DE LAS GOLOSINAS",
         "delivery_address": "San Martin 5338",
-        "delivery_instructions": "NO RECIBE Suc. 0003 LOS JUEVES",
+        "delivery_instructions": "NO RECIBE LOS JUEVES",
         "invoice_number": "P0298-00668702",
         "packages": 32,
         "type": "Fa"
