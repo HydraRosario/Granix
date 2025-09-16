@@ -19,7 +19,7 @@ class DeliveryReportParser:
         self.packages_match_pattern = re.compile(r'(\d+)\s*$')
         self.invoice_number_normalize_pattern = re.compile(r'(P029[89]-\d{6,11})')
         self.address_pattern = re.compile(
-            r'(?:.*?)((?:Pasaje|Pje\.|Alvear|San Juan|Zevallos|Balcarce|3 De Febrero|Mendoza|Rodriguez|Santiago|San Luis|Ayacucho|San Martin|Laprida|Arijon|Regimiento|Artigas|Thedy|French|Juan Jose Paso|Genova|Jose Ingenieros)(?:[\s\w,.]*?)(?:N[°.]?\s*)?\d+)(?:,\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*)*,\s*Rosario',
+            r'(?:.*?)((?:Pasaje|Pje\.|Alvear|San Juan|Zeballos|Velez Sarsfield|Cordiviola|Drago|Del Valle|Andrade|Sanchez De Bustamante|Corrientes|Buenos Aires|Entre Rios|Marco Polo|Ibarlucea|Nansen|Reconquista|Av. Alberdi|Balcarce|3 De Febrero|Mendoza|Rodriguez|Santiago|San Luis|Ayacucho|San Martin|Laprida|Arijon|Regimiento|Artigas|Thedy|French|Juan Jose Paso|Genova|Jose Ingenieros)(?:[\s\w,.]*?)(?:N[°.]?\s*)?\d+)(?:,\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*)*,\s*Rosario',
             re.IGNORECASE
         )
 
