@@ -1,0 +1,103 @@
+/*
+  RouteMap.css
+  Estilos para el contenedor del mapa y la línea de tiempo horizontal.
+*/
+
+/* Contenedor principal que envuelve el mapa y la línea de tiempo */
+.route-map-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #f8f9fa; /* Un color de fondo suave */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Estilo para el contenedor del mapa Leaflet */
+.map-view {
+  height: 60%; /* El mapa ocupa el 60% de la altura del contenedor */
+  width: 100%;
+}
+
+/* Mensaje que se muestra cuando no hay datos para el mapa */
+.no-map-data-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #6c757d;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Contenedor de la línea de tiempo */
+.timeline-container {
+  height: 40%; /* La línea de tiempo ocupa el 40% restante */
+  padding: 20px;
+  overflow-x: auto; /* Permite el desplazamiento horizontal */
+  overflow-y: hidden;
+  background-color: #ffffff;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  align-items: center;
+}
+
+/* Pista de la línea de tiempo (la línea horizontal) */
+.timeline-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 4px;
+  width: 100%;
+  background-color: #007bff; /* Color azul para la línea */
+  min-width: 1800px; /* Ancho mínimo para asegurar que la línea se extienda */
+}
+
+/* Contenedor para cada parada en la línea de tiempo */
+.timeline-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 40px; /* Espacio entre paradas */
+}
+
+/* Pin/marcador en la línea de tiempo */
+.timeline-pin {
+  position: absolute;
+  bottom: -8px; /* Posiciona el pin sobre la línea */
+  width: 20px;
+  height: 20px;
+  background-color: #ffffff;
+  border: 3px solid #007bff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.timeline-pin:hover {
+  transform: scale(1.2); /* Agranda el pin al pasar el mouse */
+}
+
+/* Tarjeta de información de la parada */
+.timeline-card {
+  position: absolute;
+  top: 25px; /* Posiciona la tarjeta debajo de la línea */
+  width: 180px; /* Ancho fijo para las tarjetas */
+  padding: 10px;
+  background-color: #f1f3f5;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.timeline-card strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #343a40;
+}

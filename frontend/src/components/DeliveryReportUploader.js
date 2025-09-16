@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import api from '../api/api'; // Import the API utility
+import { useAppContext } from '../context/AppContext'; // Import the context hook
 import './DeliveryReportUploader.css';
 import './CollapsibleCard.css';
 
 const DeliveryReportUploader = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { isLoading, processDeliveryReport } = useAppContext(); // Get the processing function and loading state from context
   const [message, setMessage] = useState('');
 
   const toggleOpen = () => {
@@ -25,26 +25,16 @@ const DeliveryReportUploader = () => {
       return;
     }
 
-    setLoading(true);
-    setMessage('Cargando y procesando...');
-    const formData = new FormData();
-    formData.append('file', file);
-
+    setMessage('Cargando y procesando el informe de reparto...');
     try {
-      const response = await api.post('/process_delivery_report', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setMessage('Archivo procesado con éxito. Texto OCR extraído.');
-      console.log('Respuesta del backend:', response.data);
-      // Aquí podrías manejar la respuesta, por ejemplo, mostrar el raw_ocr_text
+      // Use the context function to process the file
+      const response = await processDeliveryReport(file);
+      setMessage('Informe de reparto procesado y ruta optimizada.');
+      console.log('Respuesta del backend:', response);
     } catch (error) {
-      setMessage('Error al procesar el archivo.');
+      setMessage('Error al procesar el informe de reparto.');
       console.error('Error al subir el archivo:', error);
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   return (
@@ -68,10 +58,10 @@ const DeliveryReportUploader = () => {
               type="file" 
               className="file-input" 
               onChange={onFileChange} 
-              disabled={loading} 
+              disabled={isLoading} 
             />
-            <button onClick={handleFileUpload} disabled={!file || loading} className="button">
-              {loading ? 'Cargando...' : 'Cargar Informe'}
+            <button onClick={handleFileUpload} disabled={!file || isLoading} className="button">
+              {isLoading ? 'Procesando...' : 'Optimizar Ruta'}
             </button>
           </div>
           {message && <p className="upload-message">{message}</p>}
