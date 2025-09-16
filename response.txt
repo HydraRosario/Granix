@@ -1,4 +1,129 @@
 {
-    "delivery_items": [],
-    "raw_ocr_text": "Impreso el: 09/09/2025 13:24:32 Pagina 1\n\nInforme para Reparto\n(Por emisi\u00e9n)\n\nLop\u00e9z, Sebastian [Transportista 451] {ASI_PREPARARCARGASSQL-25.09e)\nod Nume ro Entidad Comercial Domicilio de Entrega Bultos\n\nMov de Emisi\u00e9n\n\nFa P0298-00668316 GARCIA OSCAR Artigas N\u00b0 395, Rosario 4\nFa P0298-00668317 BARCHIESI ELBIO Ingeniero Thedy N\u00b0 277, Rosario 3\nFa P0298-00668318 FANKHAUSER MARIA French N\u00b0 889, Rosario 2\nFa P0298-00668319 FERRARO MARIA FABIANA Suc. 0001 Juan Jose Paso N\u00b0 712, Rosario 1\nFa P0298-00668320 CAMERLO MARCELO RODRIGO Genova N\u00b0 1082, Rosario 13\nFa P0298-00668321 VELA AYELEN CARLA Jose Ingenieros N\u00b0 1702, Rosario 7\nFa P0298-00668322 WANG LAN Suc. 0001 Av. Genova N\u00b0 1171, Rosario 6\nFa P0298-00668323 TORRES JOEL MARTIN Suc. 0001 Genova N\u00b0 1485, Rosario 8\nFa P0298-00668324 UGARTE NORMA BEATRIZ Velez Sarsfield N\u00b0 260, Rosario 2\nFa P0298-00668325 CASTOLIDI JUAN MARIA Suc. 0001 Cordiviola N\u00b0 770, Rosario 3\nFa P0298-00668326 POLIZZ| DANIELA BEATRIZ Drago N\u00b0 1231, Rosario 2\nFa P0298-00668327 WENG BIHUI Del Valle Iberlucea N\u00b0 1230, Rosario 6\nFa P0298-00668328 ALVAREZ CRISTIAN MARCELO Nansen N\u00b0 509, Rosario 41\nFa P0298-00668329 ZHENG ZHIYONG Reconquista N\u00b0 742, Rosario 5\nFa P0298-00668330 LANZINI MARIANO ANDRES Suc. 0002 Av. Alberdi N\u00b0 370, Rosario 6\nFa P0298-00668331 QUINTERO VERONICA SILVANA Jose Ingenieros N\u00b0 1343, Rosario 5\nFa P0298-00668461 WANG TIANFA Genova N\u00b0 1731, Rosario 7\n\nCantidad de Facturas: 17 Cantidad de Remitos: 0 Bultos: 131\n\n"
+  "parsed_report_data": {
+    "delivery_items": [
+      {
+        "commercial_entity": "GARCIA",
+        "delivery_address": "OSCAR Artigas N\u00b0",
+        "invoice_number": "P0298-00668316",
+        "packages": 395,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "BARCHIESI",
+        "delivery_address": "ELBIO Ingeniero Thedy N\u00b0",
+        "invoice_number": "P0298-00668317",
+        "packages": 277,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "FANKHAUSER",
+        "delivery_address": "MARIA French N\u00b0",
+        "invoice_number": "P0298-00668318",
+        "packages": 889,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "FERRARO",
+        "delivery_address": "MARIA FABIANA Suc.",
+        "invoice_number": "P0298-00668319",
+        "packages": 1,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "CAMERLO",
+        "delivery_address": "MARCELO RODRIGO Genova N\u00b0",
+        "invoice_number": "P0298-00668320",
+        "packages": 1082,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "VELA",
+        "delivery_address": "AYELEN CARLA Jose Ingenieros N\u00b0",
+        "invoice_number": "P0298-00668321",
+        "packages": 1702,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "WANG",
+        "delivery_address": "LAN Suc.",
+        "invoice_number": "P0298-00668322",
+        "packages": 1,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "TORRES",
+        "delivery_address": "JOEL MARTIN Suc.",
+        "invoice_number": "P0298-00668323",
+        "packages": 1,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "UGARTE",
+        "delivery_address": "NORMA BEATRIZ Velez Sarsfield N\u00b0",
+        "invoice_number": "P0298-00668324",
+        "packages": 260,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "CASTOLIDI",
+        "delivery_address": "JUAN MARIA Suc.",
+        "invoice_number": "P0298-00668325",
+        "packages": 1,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "POLIZZ|",
+        "delivery_address": "DANIELA BEATRIZ Drago N\u00b0",
+        "invoice_number": "P0298-00668326",
+        "packages": 1231,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "WENG",
+        "delivery_address": "BIHUI Del Valle Iberlucea N\u00b0",
+        "invoice_number": "P0298-00668327",
+        "packages": 1230,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "ALVAREZ",
+        "delivery_address": "CRISTIAN MARCELO Nansen N\u00b0",
+        "invoice_number": "P0298-00668328",
+        "packages": 509,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "ZHENG",
+        "delivery_address": "ZHIYONG Reconquista N\u00b0",
+        "invoice_number": "P0298-00668329",
+        "packages": 742,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "LANZINI",
+        "delivery_address": "MARIANO ANDRES Suc.",
+        "invoice_number": "P0298-00668330",
+        "packages": 2,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "QUINTERO",
+        "delivery_address": "VERONICA SILVANA Jose Ingenieros N\u00b0",
+        "invoice_number": "P0298-00668331",
+        "packages": 1343,
+        "type": "Fa"
+      },
+      {
+        "commercial_entity": "WANG",
+        "delivery_address": "TIANFA Genova N\u00b0",
+        "invoice_number": "P0298-00668461",
+        "packages": 1731,
+        "type": "Fa"
+      }
+    ],
+    "total_invoices": 17,
+    "total_packages_summary": 131,
+    "total_remitos": 0
+  },
+  "raw_ocr_text": "Impreso el: 09/09/2025 13:24:32 Pagina 1\n\nInforme para Reparto\n(Por emisi\u00e9n)\n\nLop\u00e9z, Sebastian [Transportista 451] {ASI_PREPARARCARGASSQL-25.09e)\nod Nume ro Entidad Comercial Domicilio de Entrega Bultos\n\nMov de Emisi\u00e9n\n\nFa P0298-00668316 GARCIA OSCAR Artigas N\u00b0 395, Rosario 4\nFa P0298-00668317 BARCHIESI ELBIO Ingeniero Thedy N\u00b0 277, Rosario 3\nFa P0298-00668318 FANKHAUSER MARIA French N\u00b0 889, Rosario 2\nFa P0298-00668319 FERRARO MARIA FABIANA Suc. 0001 Juan Jose Paso N\u00b0 712, Rosario 1\nFa P0298-00668320 CAMERLO MARCELO RODRIGO Genova N\u00b0 1082, Rosario 13\nFa P0298-00668321 VELA AYELEN CARLA Jose Ingenieros N\u00b0 1702, Rosario 7\nFa P0298-00668322 WANG LAN Suc. 0001 Av. Genova N\u00b0 1171, Rosario 6\nFa P0298-00668323 TORRES JOEL MARTIN Suc. 0001 Genova N\u00b0 1485, Rosario 8\nFa P0298-00668324 UGARTE NORMA BEATRIZ Velez Sarsfield N\u00b0 260, Rosario 2\nFa P0298-00668325 CASTOLIDI JUAN MARIA Suc. 0001 Cordiviola N\u00b0 770, Rosario 3\nFa P0298-00668326 POLIZZ| DANIELA BEATRIZ Drago N\u00b0 1231, Rosario 2\nFa P0298-00668327 WENG BIHUI Del Valle Iberlucea N\u00b0 1230, Rosario 6\nFa P0298-00668328 ALVAREZ CRISTIAN MARCELO Nansen N\u00b0 509, Rosario 41\nFa P0298-00668329 ZHENG ZHIYONG Reconquista N\u00b0 742, Rosario 5\nFa P0298-00668330 LANZINI MARIANO ANDRES Suc. 0002 Av. Alberdi N\u00b0 370, Rosario 6\nFa P0298-00668331 QUINTERO VERONICA SILVANA Jose Ingenieros N\u00b0 1343, Rosario 5\nFa P0298-00668461 WANG TIANFA Genova N\u00b0 1731, Rosario 7\n\nCantidad de Facturas: 17 Cantidad de Remitos: 0 Bultos: 131\n\n"
 }

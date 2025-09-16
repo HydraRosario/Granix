@@ -16,6 +16,7 @@ from geopy.geocoders import Nominatim
 from flask_cors import CORS # Importa CORS
 from pdf2image import convert_from_path
 from contextlib import contextmanager
+import io
 
 # Dirección de respaldo para geocodificación fallida
 DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
@@ -24,14 +25,14 @@ DEFAULT_START_ADDRESS = "Mendoza y Wilde, Rosario, Santa Fe, Argentina"
 load_dotenv()
 
 @contextmanager
-def temp_file(suffix=""):
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+def temp_file_path(suffix=""):
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    os.close(fd) # Close the file descriptor immediately
     try:
-        yield tmp.name
+        yield path
     finally:
-        tmp.close() # Explicitly close the file handle
-        if os.path.exists(tmp.name):
-            os.unlink(tmp.name)
+        if os.path.exists(path):
+            os.unlink(path)
 
 def create_app() -> Flask:
     """
@@ -112,10 +113,11 @@ def create_app() -> Flask:
         images = convert_from_path(pdf_path, poppler_path=poppler_path)
         full_text = []
         for i, image in enumerate(images):
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f"_page_{i+1}.png") as img_temp_file:
-                img_temp_path = img_temp_file.name
-                image.save(img_temp_path, 'PNG')
-            full_text.append(extract_text_from_image(img_temp_path))
+            # Save image to a BytesIO object instead of a temporary file
+            with io.BytesIO() as image_bytes_io:
+                image.save(image_bytes_io, format='PNG')
+                image_bytes_io.seek(0) # Rewind to the beginning of the stream
+                full_text.append(extract_text_from_image(image_bytes_io))
         return "\n".join(full_text)
 
     def upload_image_to_cloudinary(file_obj) -> str:
@@ -345,6 +347,58 @@ def create_app() -> Flask:
             "invoice_number": invoice_number,
         }
 
+    def parse_delivery_report_text(raw_ocr_text: str) -> dict:
+        """
+        Extrae datos estructurados del texto OCR de un informe de reparto.
+        """
+        delivery_items = []
+        total_invoices = 0
+        total_remitos = 0
+        total_packages_summary = 0
+
+        # Regex to capture each delivery item line
+        # Fa P0298-00668316 GARCIA OSCAR Artigas N° 395, Rosario 4
+        # (Fa|Re) (InvoiceNumber) (CommercialEntity) (DeliveryAddress) (Bultos)
+        item_pattern = re.compile(
+            r'(Fa|Re)\s+([A-Z0-9-]+)\s+([^,]+?)\s+([^0-9]+?)\s+(\d+)'
+        )
+
+        # Regex to capture summary at the end
+        summary_pattern = re.compile(
+            r'Cantidad de Facturas:\s*(\d+)\s+Cantidad de Remitos:\s*(\d+)\s+Bultos:\s*(\d+)'
+        )
+
+        lines = raw_ocr_text.split('\n')
+        for line in lines:
+            item_match = item_pattern.search(line)
+            if item_match:
+                item_type = item_match.group(1)
+                invoice_number = item_match.group(2)
+                commercial_entity = item_match.group(3).strip()
+                delivery_address = item_match.group(4).strip()
+                packages = int(item_match.group(5))
+
+                delivery_items.append({
+                    "type": item_type,
+                    "invoice_number": invoice_number,
+                    "commercial_entity": commercial_entity,
+                    "delivery_address": delivery_address,
+                    "packages": packages
+                })
+            
+            summary_match = summary_pattern.search(line)
+            if summary_match:
+                total_invoices = int(summary_match.group(1))
+                total_remitos = int(summary_match.group(2))
+                total_packages_summary = int(summary_match.group(3))
+
+        return {
+            "delivery_items": delivery_items,
+            "total_invoices": total_invoices,
+            "total_remitos": total_remitos,
+            "total_packages_summary": total_packages_summary
+        }
+
     def extract_text_from_image(image_input) -> str:
         """
         Extrae texto usando Tesseract a través de pytesseract.
@@ -394,7 +448,7 @@ def create_app() -> Flask:
         results = []
 
         try:
-            with temp_file(suffix=filename) as temp_path:
+            with temp_file_path(suffix=filename) as temp_path:
                 file_obj.save(temp_path)
 
                 is_pdf = file_obj.mimetype == 'application/pdf' or filename.lower().endswith(".pdf")
@@ -406,7 +460,7 @@ def create_app() -> Flask:
                     
                     images = convert_from_path(temp_path, poppler_path=poppler_path)
                     for i, image in enumerate(images):
-                        with temp_file(suffix=f"_page_{i+1}.png") as img_temp_path:
+                        with temp_file_path(suffix=f"_page_{i+1}.png") as img_temp_path:
                             image.save(img_temp_path, 'PNG')
                             results.append(_process_invoice_image_data(img_temp_path))
                 elif file_obj.mimetype.startswith('image/') or filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
@@ -425,7 +479,8 @@ def create_app() -> Flask:
     @app.post("/process_delivery_report")
     def process_delivery_report():
         """
-        Endpoint para subir y procesar un informe de entrega, extrayendo solo el texto OCR.
+        Endpoint para subir y procesar un informe de entrega, extrayendo solo el texto OCR
+        y la información estructurada del informe.
         """
         if "file" not in request.files:
             return jsonify(error="No se encontró el archivo en 'file'"), 400
@@ -438,7 +493,7 @@ def create_app() -> Flask:
         raw_ocr_text = ""
 
         try:
-            with temp_file(suffix=filename) as temp_path:
+            with temp_file_path(suffix=filename) as temp_path:
                 file_obj.save(temp_path)
 
                 is_pdf = file_obj.mimetype == 'application/pdf' or filename.lower().endswith(".pdf")
@@ -450,9 +505,11 @@ def create_app() -> Flask:
                 else:
                     return jsonify(error="Tipo de archivo no soportado. Solo se aceptan PDF o imágenes."), 400
 
+            parsed_report_data = parse_delivery_report_text(raw_ocr_text)
+
             return jsonify({
                 "raw_ocr_text": raw_ocr_text,
-                "delivery_items": []
+                "parsed_report_data": parsed_report_data
             }), 200
 
         except ValueError as ve:
