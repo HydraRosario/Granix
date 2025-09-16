@@ -18,7 +18,7 @@ class CustomerService:
         try:
             firebase_admin.get_app()
         except ValueError:
-            raise ConnectionError("Firebase Admin no está inicializado. Asegúrate de que se inicialice antes de usar CustomerService.")
+            raise ConnectionError("Firebase Admin no está inicializado.")
         self.db = firestore.client()
         self.collection_ref = self.db.collection('customers')
 
@@ -28,47 +28,67 @@ class CustomerService:
             docs = self.collection_ref.where('address', '==', address).limit(1).stream()
             for doc in docs:
                 customer_data = doc.to_dict()
-                customer_data['id'] = doc.id  # Añadir el ID del documento
+                customer_data['id'] = doc.id
                 return customer_data
         except Exception as e:
             logger.error(f"Error al buscar cliente por dirección '{address}' en Firestore: {e}")
         return None
 
-    def upsert_customer(self, customer_info: dict):
+    def upsert_customer(self, data: dict, source_type: str):
         """
-        Busca un cliente por dirección en Firestore. Si existe, devuelve sus datos.
-        Si no existe, lo crea, obtiene coordenadas y lo guarda en Firestore.
+        Crea o actualiza un cliente en Firestore basado en la fuente de datos.
+        - `address` es la clave principal.
+        - `delivery_report` actualiza `commercial_name` e `delivery_instructions`.
+        - `invoice` actualiza `client_name`.
         """
-        address = customer_info.get('delivery_address') or customer_info.get('address')
+        address = data.get('delivery_address') or data.get('address')
         if not address or address == 'No encontrado':
-            logger.warning("No se proporcionó una dirección válida para upsert.")
             return None
-
-        customer_name = customer_info.get('commercial_entity') or customer_info.get('client_name')
 
         existing_customer = self.find_customer_by_address(address)
 
         if existing_customer:
-            logger.info(f"Cliente encontrado en Firestore para la dirección: {address}")
-            new_instructions = customer_info.get('delivery_instructions')
-            if new_instructions and new_instructions != 'No encontrado' and existing_customer.get('delivery_instructions') != new_instructions:
-                logger.info(f"Actualizando instrucciones de entrega para el cliente {existing_customer['id']}")
-                self.collection_ref.document(existing_customer['id']).update({'delivery_instructions': new_instructions})
-                existing_customer['delivery_instructions'] = new_instructions # Actualizar el objeto en memoria
-            return existing_customer
+            # --- Cliente Existente: Actualizar campos específicos --- 
+            logger.info(f"Cliente encontrado en Firestore ({existing_customer['id']}). Actualizando desde '{source_type}'.")
+            update_data = {
+                'last_updated_at': firestore.SERVER_TIMESTAMP
+            }
+            
+            if source_type == 'delivery_report':
+                if data.get('commercial_entity'):
+                    update_data['commercial_name'] = data['commercial_entity']
+                if data.get('delivery_instructions') and data['delivery_instructions'] != 'No encontrado':
+                    update_data['delivery_instructions'] = data['delivery_instructions']
+            
+            elif source_type == 'invoice':
+                if data.get('client_name'):
+                    update_data['client_name'] = data['client_name']
+
+            if len(update_data) > 1: # Si hay algo más que el timestamp para actualizar
+                self.collection_ref.document(existing_customer['id']).update(update_data)
+                logger.info(f"Datos actualizados para el cliente: {update_data}")
+
+            # Devolver el estado completo del cliente
+            updated_customer_data = self.collection_ref.document(existing_customer['id']).get().to_dict()
+            updated_customer_data['id'] = existing_customer['id']
+            return updated_customer_data
+
         else:
-            logger.info(f"Cliente nuevo. Creando entrada en Firestore para la dirección: {address}")
+            # --- Cliente Nuevo: Crear registro --- 
+            logger.info(f"Cliente nuevo. Creando entrada en Firestore desde '{source_type}'.")
             new_customer_id = uuid4().hex
             coordinates = geocode_address(address)
             
             new_customer = {
-                'commercial_name': customer_name,
+                'id': new_customer_id,
                 'address': address,
                 'coordinates': coordinates,
-                'delivery_instructions': customer_info.get('delivery_instructions', 'No encontrado'),
-                'created_at': firestore.SERVER_TIMESTAMP
+                'client_name': data.get('client_name') if source_type == 'invoice' else None,
+                'commercial_name': data.get('commercial_entity') if source_type == 'delivery_report' else None,
+                'delivery_instructions': data.get('delivery_instructions') if source_type == 'delivery_report' else None,
+                'created_at': firestore.SERVER_TIMESTAMP,
+                'last_updated_at': firestore.SERVER_TIMESTAMP
             }
             
             self.collection_ref.document(new_customer_id).set(new_customer)
-            new_customer['id'] = new_customer_id # Añadir id para retorno
             return new_customer

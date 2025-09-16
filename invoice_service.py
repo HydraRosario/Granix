@@ -29,7 +29,7 @@ def _process_invoice_image_data(image_path: str) -> dict:
     
     # --- Integración con CustomerService ---
     customer_service = CustomerService()
-    customer_data = customer_service.upsert_customer(parsed_data)
+    customer_data = customer_service.upsert_customer(parsed_data, 'invoice')
     
     coordinates = {"latitude": None, "longitude": None}
     if customer_data and customer_data.get('coordinates'):

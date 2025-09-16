@@ -21,7 +21,7 @@ def parse_delivery_report_text(raw_ocr_text: str) -> dict:
     customer_service = CustomerService()
 
     for item in parsed_data.get('delivery_items', []):
-        customer_data = customer_service.upsert_customer(item)
+        customer_data = customer_service.upsert_customer(item, 'delivery_report')
         if customer_data and customer_data.get('coordinates'):
             item['coordinates'] = customer_data['coordinates']
 
