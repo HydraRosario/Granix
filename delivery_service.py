@@ -64,23 +64,24 @@ def parse_delivery_report_text(raw_ocr_text: str) -> dict:
             delivery_address = "No encontrado"
 
             # --- 3. Extract address first from rest_of_line_after_packages ---
-            # Improved and more strict address pattern:
-            # - Looks for a street name (capitalized words, or "3 De Febrero")
+            # Improved and more flexible address pattern:
+            # - Looks for a street name (from a predefined list)
+            # - Followed by optional additional words/characters (non-greedy)
             # - Followed by an optional "N°" or "N"
             # - Followed by a street number
             # - Followed by optional additional address details
             # - Ending with ", Rosario"
             address_pattern = re.compile(
-                r'((?:[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ]*(?:\s+[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ]*)*\s+(?:N[°.]?\s*)?\d+)|(?:\d+\s+De Febrero\s+(?:N[°.]?\s*)?\d+))(?:,\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*)*,\s*Rosario',
+                r'(?:.*?)((?:Pasaje|Pje\.|Alvear|San Juan|Zevallos|Balcarce|3 De Febrero|Mendoza|Rodriguez|Santiago|San Luis|Ayacucho|San Martin|Laprida|Arijon|Regimiento|Artigas|Thedy|French|Juan Jose Paso|Genova|Jose Ingenieros)(?:[\s\w,.]*?)(?:N[°.]?\s*)?\d+)(?:,\s*[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]*)*,\s*Rosario',
                 re.IGNORECASE
             )
 
             address_match = address_pattern.search(rest_of_line_after_packages)
 
             if address_match:
-                delivery_address = address_match.group(0).strip()
+                delivery_address = address_match.group(1).strip()
                 # The commercial entity is everything before the address
-                commercial_entity = rest_of_line_after_packages[:address_match.start()].strip()
+                commercial_entity = rest_of_line_after_packages[:address_match.start(1)].strip()
 
                 # --- Clean and format commercial_entity ---
                 commercial_entity = commercial_entity.upper()
@@ -99,6 +100,12 @@ def parse_delivery_report_text(raw_ocr_text: str) -> dict:
                 # Remove "N" or "N°" between street and number
                 delivery_address = re.sub(r'\s+N[°.]?\s*', ' ', delivery_address, flags=re.IGNORECASE)
 
+                # Remove the commercial entity from the address if it was accidentally captured
+                # This is a key step to prevent entity name from polluting the address field
+                commercial_entity_to_remove = commercial_entity.title() if commercial_entity else ""
+                if commercial_entity_to_remove and commercial_entity_to_remove in delivery_address:
+                    delivery_address = re.sub(re.escape(commercial_entity_to_remove), '', delivery_address, flags=re.IGNORECASE).strip()
+
                 # Format to title case, ensuring "Rosario" remains "Rosario"
                 delivery_address_parts = []
                 for part in delivery_address.split(','):
@@ -108,13 +115,15 @@ def parse_delivery_report_text(raw_ocr_text: str) -> dict:
                     else:
                         delivery_address_parts.append(part.title())
                 delivery_address = ", ".join(delivery_address_parts)
+                # Correct "De Febrero" to be capitalized
+                delivery_address = re.sub(r'\bde\b', 'De', delivery_address)
 
             else:
                 # Fallback if address pattern not found, assume the whole rest_of_line_after_packages is commercial entity
                 commercial_entity = rest_of_line_after_packages.upper()
                 # Apply cleaning for standalone numbers even in fallback
-                commercial_entity = re.sub(r'\b\d+\b', '', commercial_entity).strip()
-                commercial_entity = re.sub(r'^\s*\d+\s*', '', commercial_entity).strip()
+                commercial_entity = re.sub(r'\b\d+\b', '', commercial_entity).strip() # Remove standalone numbers
+                commercial_entity = re.sub(r'^\s*\d+\s*', '', commercial_entity).strip() # Remove leading numbers/prefixes
                 commercial_entity = re.sub(r'[^\w\s.,-]', '', commercial_entity).strip()
                 commercial_entity = re.sub(r'\b(?:ESQ|SUC|S\.R\.L)\b\.?', '', commercial_entity, flags=re.IGNORECASE).strip()
                 # Remove the invoice number if it somehow ended up in the commercial entity

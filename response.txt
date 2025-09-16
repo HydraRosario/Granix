@@ -2,134 +2,134 @@
   "parsed_report_data": {
     "delivery_items": [
       {
-        "commercial_entity": "",
-        "delivery_address": "Bessone Ernesto Pedro San Juan 2096, Rosario",
+        "commercial_entity": "BESSONE ERNESTO PEDRO",
+        "delivery_address": "San Juan 2096",
         "invoice_number": "P0298-00667696",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "ALFA SUPERMERCADOS S.R.L. SUC.",
-        "delivery_address": "De Febrero 2480, Rosario",
+        "commercial_entity": "ALFA SUPERMERCADOS",
+        "delivery_address": "3 De Febrero 2480",
         "invoice_number": "P0298-00667697",
         "packages": 24,
         "type": "Fa"
       },
       {
-        "commercial_entity": "MILITO JUAN ALVEAR ESQ.",
-        "delivery_address": "Zevallos 1501, Rosario",
+        "commercial_entity": "MILITO JUAN",
+        "delivery_address": "Alvear Esq. Zevallos 1501",
         "invoice_number": "P0298-00667698",
         "packages": 3,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Quaranta Barbara Ana Balcarce 1306, Rosario",
+        "commercial_entity": "QUARANTA BARBARA ANA",
+        "delivery_address": "Balcarce 1306",
         "invoice_number": "P0298-00667699",
         "packages": 12,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Dominguez Ester 3",
+        "commercial_entity": "DOMINGUEZ ESTER",
+        "delivery_address": "3 De Febrero 2492",
         "invoice_number": "P0298-00667700",
         "packages": 12,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Huang Wendi Zeballos 2524, Rosario",
+        "commercial_entity": "HUANG WENDI ZEBALLOS N , ROSARIO",
+        "delivery_address": "No encontrado",
         "invoice_number": "P0298-00667701",
         "packages": 13,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Camposarcuno Angel Hugo Balcarce 1186, Rosario",
+        "commercial_entity": "CAMPOSARCUNO ANGEL HUGO",
+        "delivery_address": "Balcarce 1186",
         "invoice_number": "P0298-00667702",
         "packages": 5,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Cataldo Susana Alvear 1499, Rosario",
+        "commercial_entity": "CATALDO SUSANA",
+        "delivery_address": "Alvear 1499",
         "invoice_number": "P0298-00667703",
         "packages": 3,
         "type": "Fa"
       },
       {
-        "commercial_entity": "MARIOTTI FACUNDO TOMAS SUC.",
-        "delivery_address": "Mendoza 2116, Rosario",
+        "commercial_entity": "MARIOTTI FACUNDO TOMAS",
+        "delivery_address": "Mendoza 2116",
         "invoice_number": "P0298-00667704",
         "packages": 5,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Olguin Azareno Rodriguez 1269, Rosario",
+        "commercial_entity": "OLGUIN NAZARENO",
+        "delivery_address": "Rodriguez 1269",
         "invoice_number": "P0298-00667705",
         "packages": 4,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Infanti Sharo Eliseo San Juan 2591, Rosario",
+        "commercial_entity": "INFANTI SHARO ELISEO",
+        "delivery_address": "San Juan 2591",
         "invoice_number": "P0298-00667706",
         "packages": 5,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Zancocchia Daniel Omar 3",
+        "commercial_entity": "ZANCOCCHIA DANIEL OMAR",
+        "delivery_address": "3 De Febrero 2488",
         "invoice_number": "P0298-00667707",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "EL PUENTE PRODUCCIONES S.R.",
-        "delivery_address": "L Santiago 1067, Rosario",
+        "commercial_entity": "EL PUENTE PRODUCCIONES",
+        "delivery_address": "Santiago 1067",
         "invoice_number": "P0298-00667708",
         "packages": 19,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Hoyos Martin Antonio Pasaje Tellier 1391, Rosario",
+        "commercial_entity": "HOYOS MARTIN ANTONIO",
+        "delivery_address": "Pasaje Tellier 1391",
         "invoice_number": "P0298-00667709",
         "packages": 12,
         "type": "Fa"
       },
       {
         "commercial_entity": "CRISTOFARO RUBEN RAFAEL.",
-        "delivery_address": "Balcarce 1243, Rosario",
-        "invoice_number": "P0298-006677",
+        "delivery_address": "Balcarce 1243",
+        "invoice_number": "P0298-00667710",
         "packages": 1,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Bellingeri Jose Alberto San Luis 2217, Rosario",
-        "invoice_number": "P0298-006677",
+        "commercial_entity": "BELLINGERI JOSE ALBERTO",
+        "delivery_address": "San Luis 2217",
+        "invoice_number": "P0298-00667711",
         "packages": 2,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Galetto Maria Fernanda Santiago 1085, Rosario",
+        "commercial_entity": "GALETTO MARIA FERNANDA",
+        "delivery_address": "Santiago 1085",
         "invoice_number": "P0298-00667712",
         "packages": 4,
         "type": "Fa"
       },
       {
-        "commercial_entity": "",
-        "delivery_address": "Guan Jingjing San Luis 2351, Rosario",
-        "invoice_number": "P0298-006677",
+        "commercial_entity": "GUAN JINGJING",
+        "delivery_address": "San Luis 2351",
+        "invoice_number": "P0298-00667713",
         "packages": 13,
         "type": "Fa"
       },
       {
-        "commercial_entity": "CHEN JUNFENG SUC.",
-        "delivery_address": "Mendoza 5050, Rosario",
+        "commercial_entity": "CHEN JUNFENG",
+        "delivery_address": "Mendoza 5050",
         "invoice_number": "P0298-00667791",
         "packages": 15,
         "type": "Fa"
