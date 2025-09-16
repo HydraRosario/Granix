@@ -62,12 +62,19 @@ except Exception as e:
 def geocode_address(address_string: str) -> dict:
     """
     Geocodifica una dirección usando Nominatim con un enfoque robusto.
+    Se utiliza un bounding box para Rosario para mejorar la precisión.
 
     :param address_string: Dirección a geocodificar
     :return: Diccionario con latitude y longitude
     """
     geolocator = Nominatim(user_agent="granix-backend/1.0")
     
+    # Coordenadas del bounding box para Rosario, Argentina (sur, oeste, norte, este)
+    # Esto ayuda a Nominatim a priorizar resultados dentro de esta área.
+    # Coordenadas del bounding box para Rosario, Argentina (oeste, sur, este, norte)
+    # Esto ayuda a Nominatim a priorizar resultados dentro de esta área.
+    ROSARIO_BOUNDING_BOX = (-60.75, -33.016, -60.6, -32.85)
+
     # Usar la dirección por defecto si la dirección proporcionada es None o vacía
     if not address_string:
         logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
@@ -80,7 +87,8 @@ def geocode_address(address_string: str) -> dict:
     try:
         # Construir una única cadena de consulta
         full_query = f"{address_string}, {city}, Santa Fe, Argentina"
-        location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
+        # Geocodificar con bounding box para Rosario
+        location = geolocator.geocode(full_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
         
         if location:
             return {
@@ -89,9 +97,9 @@ def geocode_address(address_string: str) -> dict:
             }
         else:
             logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Usando dirección por defecto.")
-            # Si Nominatim no encuentra la dirección, usar la dirección por defecto
+            # Si Nominatim no encuentra la dirección, usar la dirección por defecto con bounding box
             default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+            location = geolocator.geocode(default_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
             if location:
                 return {
                     "latitude": location.latitude,
@@ -102,10 +110,10 @@ def geocode_address(address_string: str) -> dict:
                 return {"latitude": None, "longitude": None} # Fallback final
     except Exception as e:
         logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}. Usando dirección por defecto.")
-        # En caso de error, intentar geocodificar la dirección por defecto
+        # En caso de error, intentar geocodificar la dirección por defecto con bounding box
         try:
             default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10)
+            location = geolocator.geocode(default_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
             if location:
                 return {
                     "latitude": location.latitude,

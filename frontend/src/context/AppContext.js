@@ -45,13 +45,12 @@ export const AppProvider = ({ children }) => {
         },
       });
       
-      // The backend response contains the optimized route in response.data.route
-      // and other details. We store the whole object.
+      // Store the whole response object in optimizedRoute state
       setOptimizedRoute(response.data); 
       
-      // Optionally, if the response contains updated invoice data, you can update the invoices state
-      if (response.data.route) {
-        setInvoices(response.data.route);
+      // If the optimized route is present in the response, update the invoices state with it
+      if (response.data.parsed_report_data && Array.isArray(response.data.parsed_report_data.optimized_route)) {
+        setInvoices(response.data.parsed_report_data.optimized_route);
       }
 
       return response.data; // Return data for local feedback in the component

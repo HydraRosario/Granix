@@ -36,14 +36,14 @@ const DeliveryList = () => {
             <p>Sube una para empezar. 🚀</p>
           </div>
         ) : (
-          invoices.map((invoice) => {
-            const isExpanded = expandedInvoices.includes(invoice.invoice_id);
+          invoices.map((invoice, index) => {
+            const isExpanded = expandedInvoices.includes(invoice.invoice_id || invoice.commercial_entity);
             return (
-              <div key={invoice.invoice_id} className={`invoice-card ${isExpanded ? 'expanded' : ''}`}>
-                <div className={`invoice-header ${isExpanded ? 'expanded' : ''}`} onClick={() => toggleInvoice(invoice.invoice_id)}>
+              <div key={invoice.invoice_id || `${invoice.commercial_entity}-${index}`} className={`invoice-card ${isExpanded ? 'expanded' : ''}`}>
+                <div className={`invoice-header ${isExpanded ? 'expanded' : ''}`} onClick={() => toggleInvoice(invoice.invoice_id || invoice.commercial_entity)}>
                   <div className="invoice-header-info">
-                    <span className="client-name">{invoice.parsed_data.client_name || "Cliente no encontrado"}</span>
-                    <span>{invoice.parsed_data.address || "Dirección no encontrada"}</span>
+                    <span className="client-name">{invoice.parsed_data?.client_name || invoice.commercial_entity || "Cliente no encontrado"}</span>
+                    <span>{invoice.parsed_data?.address || invoice.delivery_address || "Dirección no encontrada"}</span>
                   </div>
                   <div className={`indicator ${isExpanded ? 'expanded' : ''}`}>
                     &gt;
