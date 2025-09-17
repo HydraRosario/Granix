@@ -62,18 +62,16 @@ except Exception as e:
 def geocode_address(address_string: str) -> dict:
     """
     Geocodifica una dirección usando Nominatim con un enfoque robusto.
-    Se utiliza un bounding box para Rosario para mejorar la precisión.
+    Se utiliza un viewbox para Rosario para mejorar la precisión.
 
     :param address_string: Dirección a geocodificar
     :return: Diccionario con latitude y longitude
     """
     geolocator = Nominatim(user_agent="granix-backend/1.0")
     
-    # Coordenadas del bounding box para Rosario, Argentina (sur, oeste, norte, este)
+    # Coordenadas del viewbox para Rosario, Argentina: [(sur, oeste), (norte, este)]
     # Esto ayuda a Nominatim a priorizar resultados dentro de esta área.
-    # Coordenadas del bounding box para Rosario, Argentina (oeste, sur, este, norte)
-    # Esto ayuda a Nominatim a priorizar resultados dentro de esta área.
-    ROSARIO_BOUNDING_BOX = (-60.75, -33.016, -60.6, -32.85)
+    ROSARIO_VIEWBOX = [(-33.016, -60.75), (-32.85, -60.6)]
 
     # Usar la dirección por defecto si la dirección proporcionada es None o vacía
     if not address_string:
@@ -85,10 +83,15 @@ def geocode_address(address_string: str) -> dict:
         city = "Ibarlucea"
 
     try:
-        # Construir una única cadena de consulta
         full_query = f"{address_string}, {city}, Santa Fe, Argentina"
-        # Geocodificar con bounding box para Rosario
-        location = geolocator.geocode(full_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
+        # Geocodificar con viewbox para Rosario y bounded=True para limitar los resultados a esa caja.
+        location = geolocator.geocode(
+            full_query, 
+            country_codes='ar', 
+            timeout=10, 
+            viewbox=ROSARIO_VIEWBOX, 
+            bounded=True
+        )
         
         if location:
             return {
@@ -96,35 +99,20 @@ def geocode_address(address_string: str) -> dict:
                 "longitude": location.longitude
             }
         else:
-            logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Usando dirección por defecto.")
-            # Si Nominatim no encuentra la dirección, usar la dirección por defecto con bounding box
-            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
+            logger.warning(f"Nominatim no pudo geocodificar la dirección: {full_query}. Intentando sin viewbox.")
+            # Si falla, intentar sin el viewbox como fallback
+            location = geolocator.geocode(full_query, country_codes='ar', timeout=10)
             if location:
                 return {
                     "latitude": location.latitude,
                     "longitude": location.longitude
                 }
-            else:
-                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
-                return {"latitude": None, "longitude": None} # Fallback final
+            logger.error(f"Fallo total de geocodificación para: {full_query}")
+            return {"latitude": None, "longitude": None}
+
     except Exception as e:
-        logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}. Usando dirección por defecto.")
-        # En caso de error, intentar geocodificar la dirección por defecto con bounding box
-        try:
-            default_query = f"{DEFAULT_START_ADDRESS}, Rosario, Santa Fe, Argentina"
-            location = geolocator.geocode(default_query, country_codes='ar', timeout=10, bounded=True, viewbox=ROSARIO_BOUNDING_BOX)
-            if location:
-                return {
-                    "latitude": location.latitude,
-                    "longitude": location.longitude
-                }
-            else:
-                logger.error(f"Fallo la geocodificación de la dirección por defecto: {DEFAULT_START_ADDRESS}")
-                return {"latitude": None, "longitude": None} # Fallback final
-        except Exception as e_default:
-            logger.error(f"Error catastrófico al geocodificar la dirección por defecto: {e_default}")
-            return {"latitude": None, "longitude": None} # Fallback final
+        logger.error(f"Error en geocodificación con Nominatim para '{address_string}': {e}.")
+        return {"latitude": None, "longitude": None} # Fallback final
 
 @contextmanager
 def temp_file_path(suffix=""):
