@@ -66,7 +66,8 @@
   border-radius: 12px;
   box-shadow: var(--shadow);
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto; /* Allow scrolling within the card */
+  overflow-x: hidden;
 }
 
 .right-column-card .leaflet-container {

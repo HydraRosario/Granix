@@ -1,0 +1,141 @@
+/* Contenedor Principal */
+.delivery-tracker-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    margin-top: 1rem;
+}
+
+/* Título h2 eliminado, por lo que su estilo también se va */
+
+.no-route-message {
+    text-align: center;
+    padding: 30px;
+    color: #5a6872;
+}
+
+.error-message {
+    color: #e74c3c;
+    text-align: center;
+    padding: 20px;
+}
+
+/* 1. Barra de Progreso de Paradas */
+.stops-progress-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 24px;
+}
+
+.stop-marker {
+    width: 12px;
+    height: 12px;
+    background-color: #d1d8e0; /* Gris por defecto (pendiente) */
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Marcador de parada visitada */
+.stop-marker.visited {
+    background-color: #8492a6; /* Gris oscuro */
+}
+
+/* Marcador de parada actual */
+.stop-marker.current {
+    background-color: #3498db; /* Azul */
+    transform: scale(1.5);
+    box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+}
+
+/* 2. Contenedor de Detalles de la Parada Actual */
+.current-stop-details {
+    min-height: 120px; /* Altura fija para evitar saltos de layout */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Nuevo contenedor para layout flex (info | botones) */
+.stop-layout-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stop-info {
+    text-align: left; /* Alinear texto a la izquierda */
+    flex-grow: 1; /* Permitir que la info ocupe el espacio disponible */
+}
+
+.stop-info h2 {
+    font-size: 22px;
+    color: #2c3e50;
+    margin: 0 0 8px 0;
+}
+
+.stop-info p {
+    font-size: 16px;
+    color: #5a6872;
+    margin: 4px 0;
+}
+
+.stop-info .packages {
+    font-weight: bold;
+    color: #3498db;
+}
+
+.delivery-instructions {
+    font-size: 15px;
+    font-style: italic;
+    color: #e67e22; /* Un color naranja para destacar */
+    background-color: #fdf8f2;
+    border-left: 3px solid #e67e22;
+    padding: 10px;
+    margin: 12px 0;
+}
+
+.completion-message {
+    font-size: 20px;
+    font-weight: bold;
+    color: #27ae60;
+    text-align: center;
+}
+
+/* 3. Botones de Acción (modificado para layout vertical) */
+.action-buttons {
+    display: flex;
+    flex-direction: column; /* Apilar botones verticalmente */
+    gap: 10px; /* Espacio entre botones */
+}
+
+.action-buttons button {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 160px; /* Ancho mínimo para los botones */
+}
+
+.action-buttons button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#btn-delivered {
+    background-color: #2ecc71;
+    color: white;
+}
+
+#btn-undelivered {
+    background-color: #e74c3c;
+    color: white;
+}

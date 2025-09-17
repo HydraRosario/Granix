@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import './DeliveryList.css';
+import './InvoiceList.css';
 
-const DeliveryList = () => {
+const InvoiceList = () => {
   const { invoices, error } = useAppContext();
   const [expandedInvoices, setExpandedInvoices] = useState([]);
 
@@ -28,7 +28,7 @@ const DeliveryList = () => {
 
   return (
     <div>
-      <h2>Facturas Procesadas</h2>
+      <h2 className="processed-invoices-title">Facturas Procesadas</h2>
       <div className="invoice-list-container">
         {invoices.length === 0 ? (
           <div className="no-invoices-message">
@@ -106,4 +106,4 @@ const DeliveryList = () => {
   );
 };
 
-export default DeliveryList;
+export default InvoiceList;

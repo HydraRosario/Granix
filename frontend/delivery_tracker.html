@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Entregas</title>
+    <style>
+        /* Estilos Generales */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Contenedor Principal */
+        .delivery-tracker {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .delivery-tracker h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #2c3e50;
+        }
+
+        /* 1. Barra de Progreso de Paradas */
+        .stops-progress-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 24px;
+        }
+
+        .stop-marker {
+            width: 12px;
+            height: 12px;
+            background-color: #d1d8e0; /* Gris por defecto (pendiente) */
+            border-radius: 50%;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Marcador de parada visitada */
+        .stop-marker.visited {
+            background-color: #8492a6; /* Gris oscuro */
+        }
+
+        /* Marcador de parada actual */
+        .stop-marker.current {
+            background-color: #3498db; /* Azul */
+            transform: scale(1.5);
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+        }
+
+        /* 2. Contenedor de Detalles de la Parada Actual */
+        .current-stop-details {
+            text-align: center;
+            min-height: 150px; /* Altura fija para evitar saltos de layout */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .current-stop-details .stop-info h2 {
+            font-size: 22px;
+            color: #2c3e50;
+            margin: 0 0 8px 0;
+        }
+
+        .current-stop-details .stop-info p {
+            font-size: 16px;
+            color: #5a6872;
+            margin: 4px 0;
+        }
+
+        .current-stop-details .stop-info .packages {
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .completion-message {
+            font-size: 20px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        /* 3. Botones de Acción */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .action-buttons button {
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 180px;
+        }
+
+        .action-buttons button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #btn-delivered {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #btn-undelivered {
+            background-color: #e74c3c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="delivery-tracker">
+        <h1>Seguimiento de Ruta</h1>
+        
+        <!-- 1. Barra de Progreso de Paradas -->
+        <div class="stops-progress-bar" id="stops-progress-bar">
+            <!-- Los marcadores de parada se generarán aquí con JavaScript -->
+        </div>
+
+        <!-- 2. Detalles de la Parada Actual -->
+        <div class="current-stop-details" id="current-stop-details">
+            <!-- La información de la parada actual se mostrará aquí -->
+        </div>
+
+        <!-- 3. Botones de Acción -->
+        <div class="action-buttons" id="action-buttons">
+            <button id="btn-delivered">Entregado</button>
+            <button id="btn-undelivered">No se pudo entregar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATOS DE EJEMPLO ---
+            // En una aplicación real, estos datos vendrían de una llamada a la API del backend.
+            const optimizedRouteData = [
+                { business_name: "Tienda A", address: "Calle Falsa 123", packages: 5 },
+                { business_name: "Supermercado B", address: "Avenida Siempreviva 742", packages: 12 },
+                { business_name: "Kiosco C", address: "Boulevard de los Sueños Rotos 45", packages: 2 },
+                { business_name: "Farmacia D", address: "Plaza Mayor 1", packages: 8 },
+                { business_name: "Restaurante E", address: "Calle Luna 22", packages: 3 },
+                { business_name: "Librería F", address: "Avenida del Saber 88", packages: 1 },
+                { business_name: "Ferretería G", address: "Calle del Tornillo 19", packages: 20 },
+                { business_name: "Juguetería H", address: "Rincón Feliz 33", packages: 6 },
+                { business_name: "Panadería I", address: "Calle del Pan 100", packages: 4 },
+                { business_name: "Carnicería J", address: "Avenida de la Vaca 56", packages: 9 },
+                { business_name: "Verdulería K", address: "Huerta del Edén 7", packages: 15 },
+                { business_name: "Tienda L", address: "Paseo de la Moda 21", packages: 7 },
+                { business_name: "Café M", address: "Esquina del Sabor 11", packages: 2 },
+                { business_name: "Oficina N", address: "Centro de Negocios 300", packages: 1 },
+                { business_name: "Gimnasio O", address: "Calle del Músculo 49", packages: 1 },
+                { business_name: "Taller P", address: "Avenida del Motor 123", packages: 10 },
+                { business_name: "Hotel Q", address: "Plaza de los Viajeros 8", packages: 5 },
+                { business_name: "Banco R", address: "Calle del Dinero 1", packages: 1 },
+                { business_name: "Cine S", address: "Boulevard del Espectáculo 77", packages: 1 }
+            ];
+
+            // --- ESTADO DE LA APLICACIÓN ---
+            let currentStopIndex = 0;
+
+            // --- REFERENCIAS AL DOM ---
+            const stopsProgressBar = document.getElementById('stops-progress-bar');
+            const currentStopDetailsContainer = document.getElementById('current-stop-details');
+            const actionButtonsContainer = document.getElementById('action-buttons');
+            const btnDelivered = document.getElementById('btn-delivered');
+            const btnUndelivered = document.getElementById('btn-undelivered');
+
+            /**
+             * Inicializa la interfaz de usuario.
+             */
+            function initializeUI() {
+                renderStopMarkers();
+                updateCurrentStopView();
+            }
+
+            /**
+             * Renderiza los marcadores de punto para cada parada en la barra de progreso.
+             */
+            function renderStopMarkers() {
+                stopsProgressBar.innerHTML = ''; // Limpiar marcadores existentes
+                optimizedRouteData.forEach((_, index) => {
+                    const marker = document.createElement('div');
+                    marker.classList.add('stop-marker');
+                    marker.dataset.index = index; // Guardar el índice para referencia futura
+                    stopsProgressBar.appendChild(marker);
+                });
+            }
+
+            /**
+             * Actualiza la vista para mostrar la parada actual y el estado de los marcadores.
+             */
+            function updateCurrentStopView() {
+                // Actualizar marcadores visuales
+                const markers = document.querySelectorAll('.stop-marker');
+                markers.forEach((marker, index) => {
+                    marker.classList.remove('current', 'visited');
+                    if (index < currentStopIndex) {
+                        marker.classList.add('visited'); // Paradas pasadas
+                    } else if (index === currentStopIndex) {
+                        marker.classList.add('current'); // Parada actual
+                    }
+                });
+
+                // Actualizar detalles de la parada
+                if (currentStopIndex < optimizedRouteData.length) {
+                    const currentStop = optimizedRouteData[currentStopIndex];
+                    currentStopDetailsContainer.innerHTML = `
+                        <div class="stop-info">
+                            <h2>${currentStop.business_name}</h2>
+                            <p>${currentStop.address}</p>
+                            <p><span class="packages">${currentStop.packages}</span> bultos</p>
+                        </div>
+                    `;
+                } else {
+                    // Se completaron todas las paradas
+                    currentStopDetailsContainer.innerHTML = '<p class="completion-message">¡Ruta completada!</p>';
+                    actionButtonsContainer.style.display = 'none'; // Ocultar botones
+                }
+            }
+
+            /**
+             * Maneja el evento de clic para avanzar a la siguiente parada.
+             */
+            function handleNextStop() {
+                if (currentStopIndex < optimizedRouteData.length) {
+                    currentStopIndex++;
+                    updateCurrentStopView();
+                }
+            }
+
+            // --- ASIGNACIÓN DE EVENTOS ---
+            btnDelivered.addEventListener('click', handleNextStop);
+            btnUndelivered.addEventListener('click', handleNextStop);
+
+            // --- INICIO ---
+            initializeUI();
+        });
+    </script>
+
+</body>
+</html>

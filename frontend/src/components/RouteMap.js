@@ -71,21 +71,7 @@ const RouteMap = () => {
         </MapContainer>
       </div>
 
-      {hasOptimizedRoute && (
-        <div className="timeline-container">
-          <div className="timeline-track">
-            {locations.map((stop, idx) => (
-              <div key={idx} className="timeline-item">
-                <div className="timeline-pin"></div>
-                <div className="timeline-card">
-                  <strong>{stop.entity}</strong>
-                  <span>{stop.address}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };

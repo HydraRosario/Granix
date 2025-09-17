@@ -45,12 +45,10 @@ export const AppProvider = ({ children }) => {
         },
       });
       
-      // Store the whole response object in optimizedRoute state
-      setOptimizedRoute(response.data); 
-      
-      // If the optimized route is present in the response, update the invoices state with it
+      // The `setInvoices` call is removed to prevent overwriting the invoice list.
+      // The DeliveryTracker component will now consume the `optimizedRoute` state directly.
       if (response.data.parsed_report_data && Array.isArray(response.data.parsed_report_data.optimized_route)) {
-        setInvoices(response.data.parsed_report_data.optimized_route);
+        setOptimizedRoute(response.data.parsed_report_data.optimized_route);
       }
 
       return response.data; // Return data for local feedback in the component

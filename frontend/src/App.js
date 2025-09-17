@@ -1,9 +1,11 @@
 import React from 'react';
 import './App.css';
 import InvoiceUploader from './components/InvoiceUploader';
+import InvoiceList from './components/InvoiceList'; // Restored component
 import DeliveryReportUploader from './components/DeliveryReportUploader'; // New import
-import DeliveryList from './components/DeliveryList';
+import DeliveryTracker from './components/DeliveryTracker';
 import RouteMap from './components/RouteMap';
+
 import logo from './assets/logo.png';
 
 function App() {
@@ -16,11 +18,12 @@ function App() {
         <div className="left-column">
           <DeliveryReportUploader /> {/* New component */}
           <InvoiceUploader />
-          <DeliveryList />
+          <InvoiceList />
         </div>
         <div className="right-column">
           <div className="right-column-card">
             <RouteMap />
+            <DeliveryTracker />
           </div>
         </div>
       </div>
