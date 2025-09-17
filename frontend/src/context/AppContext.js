@@ -5,7 +5,8 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [invoices, setInvoices] = useState([]);
-  const [optimizedRoute, setOptimizedRoute] = useState(null); // State for the optimized route
+  const [optimizedRoute, setOptimizedRoute] = useState(null);
+  const [streetLevelPolyline, setStreetLevelPolyline] = useState(null); // State for the OSRM polyline
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -51,6 +52,11 @@ export const AppProvider = ({ children }) => {
         setOptimizedRoute(response.data.parsed_report_data.optimized_route);
       }
 
+      // Set the street-level polyline if it exists in the response
+      if (response.data.parsed_report_data && Array.isArray(response.data.parsed_report_data.street_level_polyline)) {
+        setStreetLevelPolyline(response.data.parsed_report_data.street_level_polyline);
+      }
+
       return response.data; // Return data for local feedback in the component
     } catch (err) {
       setError(err.message || 'An unknown error occurred during delivery report processing.');
@@ -62,7 +68,8 @@ export const AppProvider = ({ children }) => {
 
   const contextValue = {
     invoices,
-    optimizedRoute, // Provide the optimized route to consumers
+    optimizedRoute,
+    streetLevelPolyline, // Provide the polyline to consumers
     isLoading,
     error,
     processInvoice,

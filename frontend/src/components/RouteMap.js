@@ -15,14 +15,12 @@ L.Icon.Default.mergeOptions({
 });
 
 const RouteMap = () => {
-  const { invoices, optimizedRoute } = useAppContext();
+  const { invoices, optimizedRoute, streetLevelPolyline } = useAppContext();
 
   // If an optimized route is available, use it. Otherwise, fall back to the general invoices list.
   const routeData = (optimizedRoute && optimizedRoute.length > 0) ? optimizedRoute : invoices;
 
-  // A polyline should only be shown if there is an actual optimized route with more than one point.
-  const hasOptimizedRoute = (optimizedRoute && optimizedRoute.length > 1);
-
+  // Create a list of locations with valid coordinates for the markers.
   const locations = (routeData || [])
     .filter(point => point.coordinates && point.coordinates.latitude && point.coordinates.longitude)
     .map(point => ({
@@ -32,7 +30,13 @@ const RouteMap = () => {
       entity: point.commercial_entity || `Invoice ID: ${point.invoice_id}`,
     }));
 
-  if (!locations || locations.length === 0) {
+  // Determine the polyline to display: prefer the street-level one, fallback to a straight line from stop coordinates.
+  const polylinePositions = (streetLevelPolyline && streetLevelPolyline.length > 0) 
+    ? streetLevelPolyline 
+    : (locations.length > 1 ? locations.map(loc => [loc.lat, loc.lon]) : []);
+
+  // If there are no locations at all, show a message.
+  if (locations.length === 0) {
     return (
       <div className="no-map-data-message">
         <p>¡No hay ubicaciones para mostrar en el mapa! 🗺️</p>
@@ -41,8 +45,8 @@ const RouteMap = () => {
     );
   }
 
+  // Center the map on the first location.
   const position = [locations[0].lat, locations[0].lon];
-  const polylinePositions = locations.map(loc => [loc.lat, loc.lon]);
 
   return (
     <div className="route-map-container">
@@ -52,8 +56,10 @@ const RouteMap = () => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          {hasOptimizedRoute && <Polyline positions={polylinePositions} color="blue" />}
+          {/* Draw the street-level or straight-line polyline if it exists */}
+          {polylinePositions.length > 0 && <Polyline positions={polylinePositions} color="#3498db" weight={5} />}
           
+          {/* Draw markers for each location */}
           {locations.map((location, idx) => (
             <Marker key={idx} position={[location.lat, location.lon]}>
               <Popup>
@@ -64,8 +70,6 @@ const RouteMap = () => {
           ))}
         </MapContainer>
       </div>
-
-      
     </div>
   );
 };

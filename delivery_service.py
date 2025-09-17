@@ -1,7 +1,7 @@
 import logging
 from delivery_parser import DeliveryReportParser
 from customer_service import CustomerService
-from route_optimizer import optimize_route
+from route_optimizer import optimize_route, get_street_level_route
 
 # Configurar logger para delivery_service.py
 logger = logging.getLogger(__name__)
@@ -40,9 +40,18 @@ def parse_delivery_report_text(raw_ocr_text: str) -> dict:
         logger.info(f"Iniciando optimización de ruta para {len(valid_stops_for_optimization)} paradas.")
         optimized_route = optimize_route(valid_stops_for_optimization)
         parsed_data['optimized_route'] = optimized_route
+
+        # 4. Obtener la polilínea de la ruta a nivel de calle
+        if optimized_route:
+            street_level_polyline = get_street_level_route(optimized_route)
+            parsed_data['street_level_polyline'] = street_level_polyline
+        else:
+            parsed_data['street_level_polyline'] = []
+
     else:
         logger.warning("No hay paradas con coordenadas suficientes para optimizar la ruta.")
         parsed_data['optimized_route'] = []
+        parsed_data['street_level_polyline'] = []
 
-    # 4. Devolver todos los datos procesados
+    # 5. Devolver todos los datos procesados
     return parsed_data

@@ -7,3 +7,5 @@ cloudinary
 python-dotenv
 pdf2image==1.17.0
 ortools
+requests==2.31.0
+polyline==2.0.2

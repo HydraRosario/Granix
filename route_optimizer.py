@@ -1,4 +1,6 @@
 import logging
+import requests
+import polyline
 from math import radians, sin, cos, sqrt, atan2
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
@@ -126,3 +128,51 @@ def optimize_route(addresses: list):
     else:
         logger.error("No se encontró una solución para la optimización de la ruta.")
         return addresses
+
+def get_street_level_route(stops: list) -> list:
+    """
+    Obtiene una polilínea de ruta a nivel de calle desde OSRM para una lista de paradas.
+
+    :param stops: Una lista de diccionarios de paradas, cada uno con una clave 'coordinates'.
+    :return: Una lista de tuplas de coordenadas (lat, lon) que representan la polilínea.
+    """
+    if not stops or len(stops) < 2:
+        logger.warning("Se necesitan al menos dos paradas para generar una ruta a nivel de calle.")
+        return []
+
+    # Formatear las coordenadas para la URL de la API de OSRM (lon,lat;lon,lat;...)
+    coords_str = ";".join(
+        f"{stop['coordinates']['longitude']},{stop['coordinates']['latitude']}" 
+        for stop in stops if stop.get('coordinates')
+    )
+
+    # URL del servidor público de OSRM. Para producción, se recomienda un servidor propio.
+    # Parámetros: overview=full (geometría detallada), geometries=polyline (formato codificado)
+    url = f"http://router.project-osrm.org/route/v1/driving/{coords_str}?overview=full&geometries=polyline"
+
+    try:
+        logger.info("Consultando a OSRM para obtener la ruta a nivel de calle...")
+        response = requests.get(url, timeout=15)
+        response.raise_for_status()  # Lanza un error para respuestas 4xx/5xx
+        
+        data = response.json()
+
+        if data.get('code') == 'Ok' and data.get('routes'):
+            # Extraer la geometría de la primera ruta encontrada
+            encoded_polyline = data['routes'][0]['geometry']
+            
+            # Decodificar la polilínea para obtener una lista de coordenadas [lat, lon]
+            decoded_coords = polyline.decode(encoded_polyline)
+            
+            logger.info(f"Ruta a nivel de calle obtenida con {len(decoded_coords)} puntos.")
+            return decoded_coords
+        else:
+            logger.error(f"OSRM no pudo encontrar una ruta. Respuesta: {data.get('message')}")
+            return []
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error al contactar al servidor de OSRM: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error inesperado al procesar la respuesta de OSRM: {e}")
+        return []
