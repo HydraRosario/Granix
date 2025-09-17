@@ -64,10 +64,9 @@
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: var(--shadow);
   height: 100%;
-  overflow-y: auto; /* Allow scrolling within the card */
-  overflow-x: hidden;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
 }
 
 .right-column-card .leaflet-container {

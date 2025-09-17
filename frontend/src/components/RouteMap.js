@@ -17,17 +17,11 @@ L.Icon.Default.mergeOptions({
 const RouteMap = () => {
   const { invoices, optimizedRoute } = useAppContext();
 
-  // Correctly access the optimized route from the backend response structure
-  // It's located at optimizedRoute.parsed_report_data.optimized_route
-  const actualOptimizedRoute = optimizedRoute?.parsed_report_data?.optimized_route;
+  // If an optimized route is available, use it. Otherwise, fall back to the general invoices list.
+  const routeData = (optimizedRoute && optimizedRoute.length > 0) ? optimizedRoute : invoices;
 
-  // Determine which data to display: the actual optimized route if available, otherwise fallback to individual invoices
-  const routeData = (actualOptimizedRoute && Array.isArray(actualOptimizedRoute))
-    ? actualOptimizedRoute
-    : invoices;
-
-  // Determine if we have a valid optimized route to display the timeline and polyline
-  const hasOptimizedRoute = (actualOptimizedRoute && Array.isArray(actualOptimizedRoute) && actualOptimizedRoute.length > 0);
+  // A polyline should only be shown if there is an actual optimized route with more than one point.
+  const hasOptimizedRoute = (optimizedRoute && optimizedRoute.length > 1);
 
   const locations = (routeData || [])
     .filter(point => point.coordinates && point.coordinates.latitude && point.coordinates.longitude)

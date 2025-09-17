@@ -5,6 +5,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     padding: 24px;
     margin-top: 1rem;
+    flex-shrink: 0; /* Prevent this container from shrinking */
 }
 
 /* Título h2 eliminado, por lo que su estilo también se va */

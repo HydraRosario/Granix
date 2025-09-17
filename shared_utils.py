@@ -78,12 +78,19 @@ def geocode_address(address_string: str) -> dict:
         logger.warning("Dirección vacía proporcionada para geocodificación. Usando dirección por defecto.")
         address_string = DEFAULT_START_ADDRESS
 
+    # --- Normalización de Direcciones ---
+    # Reemplaza nombres de calles comunes o ambiguos por su versión completa para mejorar la precisión.
+    normalized_address = address_string
+    if re.search(r'^\s*Andrade\b', address_string, re.IGNORECASE):
+        normalized_address = re.sub(r'Andrade', 'Olegario Victor Andrade', address_string, count=1, flags=re.IGNORECASE)
+        logger.info(f"Dirección normalizada: '{address_string}' -> '{normalized_address}'")
+
     city = "Rosario"
-    if "25 De Mayo" in address_string:
+    if "25 De Mayo" in normalized_address:
         city = "Ibarlucea"
 
     try:
-        full_query = f"{address_string}, {city}, Santa Fe, Argentina"
+        full_query = f"{normalized_address}, {city}, Santa Fe, Argentina"
         # Geocodificar con viewbox para Rosario y bounded=True para limitar los resultados a esa caja.
         location = geolocator.geocode(
             full_query, 

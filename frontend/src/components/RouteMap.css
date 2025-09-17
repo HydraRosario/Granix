@@ -8,15 +8,14 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  background-color: #f8f9fa; /* Un color de fondo suave */
-  border-radius: 8px;
-  overflow: hidden;
+  flex-grow: 1; /* Allow this container to grow */
+  min-height: 0; /* Important for flex-grow in a flex column */
 }
 
 /* Estilo para el contenedor del mapa Leaflet */
 .map-view {
-  height: 400px; /* Altura fija para el mapa */
   width: 100%;
+  flex-grow: 1; /* Allow the map itself to grow */
 }
 
 /* Mensaje que se muestra cuando no hay datos para el mapa */
