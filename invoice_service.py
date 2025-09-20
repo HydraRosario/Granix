@@ -1,8 +1,9 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 import logging
+from firebase_admin import firestore
 from customer_service import CustomerService
 from shared_utils import extract_text_from_image, upload_image_to_cloudinary, save_invoice_data
 
@@ -14,20 +15,67 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+def _link_to_delivery_by_address(invoice_id: str, address: str, client_name: str, product_items: list, invoice_date: datetime):
+    """
+    Busca un delivery_item por dirección dentro de una ventana de tiempo y lo actualiza.
+    Esta función denormaliza los datos para simplificar las consultas de carga.
+    """
+    if not address or address == "Dirección no encontrada":
+        logger.warning(f"Dirección inválida para la factura {invoice_id}. No se puede vincular.")
+        return
+
+    db = firestore.client()
+    delivery_items_ref = db.collection('delivery_items')
+
+    # Definir la ventana de tiempo de 12 horas antes y después de la fecha de la factura
+    time_window_start = invoice_date - timedelta(hours=12)
+    time_window_end = invoice_date + timedelta(hours=12)
+
+    # NOTA: Esta consulta puede requerir un índice compuesto en Firestore.
+    # Firestore proporcionará un enlace para crearlo en el mensaje de error si es necesario.
+    query = (
+        delivery_items_ref.where('delivery_address', '==', address)
+        .where('status', '==', 'pending_link')
+        .where('createdAt', '>=', time_window_start)
+        .where('createdAt', '<=', time_window_end)
+        .limit(1)
+    )
+    
+    docs = query.stream()
+    
+    try:
+        doc = next(docs)
+        logger.info(f"Vinculando factura {invoice_id} con delivery_item {doc.id} por dirección y tiempo.")
+        
+        doc.reference.update({
+            'invoice_id': invoice_id,
+            'client_name': client_name,
+            'product_items': product_items,
+            'status': 'linked',
+            'linkedAt': firestore.SERVER_TIMESTAMP
+        })
+        logger.info(f"Vinculación por dirección y tiempo exitosa: {doc.id} -> {invoice_id}")
+
+    except StopIteration:
+        logger.warning(f"No se encontró un delivery_item pendiente para la dirección '{address}' en la ventana de tiempo. Se omite la vinculación.")
+    except Exception as e:
+        logger.error(f"Error al vincular por dirección y tiempo para '{address}': {e}")
+
 def _process_invoice_image_data(image_path: str) -> dict:
     """
-    Procesa una imagen de factura: OCR, parseo, subida a Cloudinary, geocodificación y guardado en Firestore.
+    Procesa una imagen de factura: OCR, parseo, subida a Cloudinary, guardado y vinculación.
     """
+    processing_time = datetime.now()
     raw_ocr_text = extract_text_from_image(image_path)
     parsed_data = parse_invoice_text(raw_ocr_text)
     
     client_name = parsed_data.get("client_name", "Cliente no encontrado")
+    address = parsed_data.get("address", "Dirección no encontrada")
     total_amount = parsed_data.get("total_amount")
     product_items = parsed_data.get("product_items", [])
 
     cloudinary_url = upload_image_to_cloudinary(image_path)
     
-    # --- Integración con CustomerService ---
     customer_service = CustomerService()
     customer_data = customer_service.upsert_customer(parsed_data, 'invoice')
     
@@ -37,21 +85,29 @@ def _process_invoice_image_data(image_path: str) -> dict:
 
     invoice_id = uuid4().hex
     firestore_data = {
-        "cloudinaryImageUrl": cloudinary_url,
-        "uploadedAt": datetime.now(),
+        "cloudinaryImageUrl":cloudinary_url,
+        "uploadedAt": processing_time,
         "rawOcrText": raw_ocr_text,
         "parsedData": parsed_data,
         "location": {
-            "address": parsed_data.get("address", "No encontrado"),
+            "address": address,
             "latitude": coordinates["latitude"],
             "longitude": coordinates["longitude"]
         },
         "status": "processed",
-        "processedAt": datetime.now(),
-        "invoiceNumber": parsed_data.get("invoice_number", "No encontrado")
+        "processedAt": processing_time
     }
     save_invoice_data(invoice_id, firestore_data)
     logger.info(f"[Invoice:{invoice_id}] Procesamiento completo para la factura.")
+
+    # --- Lógica de Vinculación por Dirección y Tiempo ---
+    _link_to_delivery_by_address(
+        invoice_id=invoice_id,
+        address=address,
+        client_name=client_name,
+        product_items=product_items,
+        invoice_date=processing_time
+    )
     
     formatted_total_amount = f'$ {total_amount:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".") if total_amount is not None else None
     
@@ -69,25 +125,13 @@ def _process_invoice_image_data(image_path: str) -> dict:
 
 def parse_invoice_text(raw_ocr_text: str) -> dict:
     """
-    Extrae datos estructurados del texto OCR de una factura de forma robusta.
-
-    :param raw_ocr_text: Texto crudo del OCR
-    :return: Diccionario con datos estructurados
+    Extrae datos estructurados del texto OCR de una factura.
     """
     client_name = "Cliente no encontrado"
     address = "Dirección no encontrada"
     total_amount = None
     product_items = []
-    invoice_number = "No encontrado" # New field
 
-    # --- EXTRACCIÓN DE NÚMERO DE FACTURA ---
-    invoice_number_pattern = r'(?:Factura|FACTURA)\s*N[°.]?\s*(\d{4}-\d{8})'
-    match_invoice_number = re.search(invoice_number_pattern, raw_ocr_text)
-    if match_invoice_number:
-        invoice_number = match_invoice_number.group(1)
-
-    # --- EXTRACCIÓN DE NOMBRE DE CLIENTE Y DIRECCIÓN ---
-    # Patrón para capturar el nombre del cliente y la dirección por separado
     client_address_pattern = r'Sr/Sres\.\s*Cliente[^\n]+\n(.*?)\s*Ven\.:[^\n]*\n(.*?)\s*Transp\.:'
     match_client_address = re.search(client_address_pattern, raw_ocr_text, re.DOTALL)
 
@@ -95,7 +139,6 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
         try:
             client_name = match_client_address.group(1).strip()
             address = match_client_address.group(2).strip().replace('\n', ' ')
-            # Limpieza adicional de la dirección
             address = re.sub(r'(?<![a-zA-Z])N[\u00b0*\s]+\s*', ' ', address, flags=re.IGNORECASE).strip()
             address = address.replace('?', '').strip()
             address = re.sub(r'\s{2,}', ' ', address).strip()
@@ -103,7 +146,6 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
         except IndexError:
             pass
 
-    # --- EXTRACCIÓN DE MONTO TOTAL ---
     total_amount_pattern = r'IMPORTE TOTAL\s+\$[\s]*([\d.,]+)'
     match_total = re.search(total_amount_pattern, raw_ocr_text)
     if match_total:
@@ -112,8 +154,6 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
         except (ValueError, IndexError):
             pass
 
-    # --- EXTRACCIÓN DE ÍTEMS DE PRODUCTO ---
-    # 1. Aislar el bloque de la tabla de productos
     product_block_pattern = r'Articulo\s+Cantidad\s+Descripci.n[\s\S]+?(?=Subtotal|IMPORTE TOTAL)'
     product_block_match = re.search(product_block_pattern, raw_ocr_text, re.DOTALL)
     
@@ -121,7 +161,6 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
     if product_block_match:
         product_table_text = product_block_match.group(0)
 
-    # 2. Usar un regex más estricto para las líneas de producto dentro del bloque
     product_line_pattern = r'^(\d{4,5})\s+(\d+)\s+(.+?)\s+([\d.,]+(?:,\d{2})?)\s+([\d.,]+(?:,\d{2})?)$'
 
     for line in product_table_text.split('\n'):
@@ -147,7 +186,6 @@ def parse_invoice_text(raw_ocr_text: str) -> dict:
         "address": address,
         "total_amount": total_amount,
         "product_items": product_items,
-        "invoice_number": invoice_number,
     }
 
 def process_invoices(image_paths: list) -> list:

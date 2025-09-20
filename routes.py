@@ -6,7 +6,7 @@ from datetime import datetime
 from firebase_admin import firestore
 
 from invoice_service import _process_invoice_image_data
-from delivery_service import parse_delivery_report_text
+from delivery_service import process_delivery_report_data
 from shared_utils import geocode_address, _extract_text_from_pdf, extract_text_from_image, temp_file_path
 
 transport_bp = Blueprint('transport_bp', __name__)
@@ -101,7 +101,7 @@ def process_delivery_report():
                 return jsonify(error="Tipo de archivo no soportado. Solo se aceptan PDF o imágenes."), 400
 
         # El servicio ahora parsea, enriquece y optimiza la ruta
-        parsed_report_data = parse_delivery_report_text(raw_ocr_text)
+        parsed_report_data = process_delivery_report_data(raw_ocr_text)
 
         # Guardar la ruta optimizada en Firestore si existe
         optimized_route = parsed_report_data.get('optimized_route')
