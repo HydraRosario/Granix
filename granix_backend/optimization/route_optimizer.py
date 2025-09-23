@@ -5,7 +5,7 @@ from math import radians, sin, cos, sqrt, atan2
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 
-from shared_utils import geocode_address
+from granix_backend.utils.shared_utils import geocode_address
 
 # Configurar logger
 logger = logging.getLogger(__name__)

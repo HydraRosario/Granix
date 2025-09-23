@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext'; // Import the context hook
+import { useAppContext } from '../../context/AppContext'; // Import the context hook
 import './DeliveryReportUploader.css';
-import './CollapsibleCard.css';
+import '../../components/CollapsibleCard.css';
 
 const DeliveryReportUploader = () => {
   const [isOpen, setIsOpen] = useState(false);

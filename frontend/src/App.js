@@ -1,10 +1,10 @@
 import React from 'react';
 import './App.css';
-import InvoiceUploader from './components/InvoiceUploader';
-import InvoiceList from './components/InvoiceList'; // Restored component
-import DeliveryReportUploader from './components/DeliveryReportUploader'; // New import
-import DeliveryTracker from './components/DeliveryTracker';
-import RouteMap from './components/RouteMap';
+import InvoiceUploader from './features/Invoices/InvoiceUploader';
+import InvoiceList from './features/Invoices/InvoiceList'; // Restored component
+import DeliveryReportUploader from './features/Delivery/DeliveryReportUploader'; // New import
+import DeliveryTracker from './features/Delivery/DeliveryTracker';
+import RouteMap from './features/Delivery/RouteMap';
 
 import logo from './assets/logo.png';
 

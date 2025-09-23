@@ -5,11 +5,8 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import cloudinary
 import cloudinary.uploader
-from werkzeug.utils import secure_filename
-from uuid import uuid4
 from PIL import Image
 import pytesseract
-from datetime import datetime
 import re
 from pdf2image import convert_from_path
 from contextlib import contextmanager

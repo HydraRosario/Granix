@@ -2,7 +2,7 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useAppContext } from '../context/AppContext'; // Import useAppContext
+import { useAppContext } from '../../context/AppContext'; // Import useAppContext
 import './RouteMap.css'; // Import the new CSS file
 
 // Fix for default icon issue with webpack

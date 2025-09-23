@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 import './InvoiceList.css';
 
 const InvoiceList = () => {
@@ -82,7 +82,7 @@ const InvoiceList = () => {
                   {invoice.url && (
                     <div style={{marginTop: '1rem'}}>
                       <a href={invoice.url} target="_blank" rel="noopener noreferrer">
-                        <img src={invoice.url} alt="Invoice" style={{ width: '100%', borderRadius: '8px', cursor: 'pointer' }} />
+                        <img src={invoice.url} alt="Invoice" style={{ width: '100%', borderRadius: '8px', cursor: 'pointer' }} referrerpolicy="no-referrer" />
                       </a>
                     </div>
                   )}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../../context/AppContext';
 import './InvoiceUploader.css';
-import './CollapsibleCard.css'; // New import
+import '../../components/CollapsibleCard.css'; // New import
 
 const InvoiceUploader = () => {
   const [selectedFile, setSelectedFile] = useState(null);

@@ -2,8 +2,9 @@ import logging
 from uuid import uuid4
 import firebase_admin
 from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
-from shared_utils import geocode_address
+from granix_backend.utils.shared_utils import geocode_address
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class CustomerService:
     def find_customer_by_address(self, address: str):
         """Busca un cliente por su dirección en Firestore y devuelve sus datos y su ID."""
         try:
-            docs = self.collection_ref.where('address', '==', address).limit(1).stream()
+            docs = self.collection_ref.where(filter=FieldFilter('address', '==', address)).limit(1).stream()
             for doc in docs:
                 customer_data = doc.to_dict()
                 customer_data['id'] = doc.id

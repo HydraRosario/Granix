@@ -5,9 +5,9 @@ from pdf2image import convert_from_path
 from datetime import datetime
 from firebase_admin import firestore
 
-from invoice_service import _process_invoice_image_data
-from delivery_service import process_delivery_report_data
-from shared_utils import geocode_address, _extract_text_from_pdf, extract_text_from_image, temp_file_path
+from granix_backend.services.invoice_service import _process_invoice_image_data
+from granix_backend.services.delivery_service import process_delivery_report_data
+from granix_backend.utils.shared_utils import geocode_address, _extract_text_from_pdf, extract_text_from_image, temp_file_path
 
 transport_bp = Blueprint('transport_bp', __name__)
 

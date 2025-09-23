@@ -1,11 +1,11 @@
-import os
 import re
 from datetime import datetime, timedelta
 from uuid import uuid4
 import logging
 from firebase_admin import firestore
-from customer_service import CustomerService
-from shared_utils import extract_text_from_image, upload_image_to_cloudinary, save_invoice_data
+from google.cloud.firestore_v1.base_query import FieldFilter, And
+from granix_backend.services.customer_service import CustomerService
+from granix_backend.utils.shared_utils import extract_text_from_image, upload_image_to_cloudinary, save_invoice_data
 
 # Configurar logger para invoice_service.py
 logger = logging.getLogger(__name__)
@@ -27,17 +27,16 @@ def _link_to_delivery_by_address(invoice_id: str, address: str, client_name: str
     db = firestore.client()
     delivery_items_ref = db.collection('delivery_items')
 
-    # Definir la ventana de tiempo de 12 horas antes y después de la fecha de la factura
-    time_window_start = invoice_date - timedelta(hours=12)
-    time_window_end = invoice_date + timedelta(hours=12)
-
-    # NOTA: Esta consulta puede requerir un índice compuesto en Firestore.
+    # Busca el item de delivery más antiguo con estado 'pending_link' para la misma dirección.
+    # Esto permite vincular facturas a repartos de días anteriores.
+    # NOTA: Esta consulta requiere un índice compuesto en Firestore.
     # Firestore proporcionará un enlace para crearlo en el mensaje de error si es necesario.
     query = (
-        delivery_items_ref.where('delivery_address', '==', address)
-        .where('status', '==', 'pending_link')
-        .where('createdAt', '>=', time_window_start)
-        .where('createdAt', '<=', time_window_end)
+        delivery_items_ref.where(filter=And([
+            FieldFilter("delivery_address", "==", address),
+            FieldFilter("status", "==", "pending_link")
+        ]))
+        .order_by("createdAt")
         .limit(1)
     )
     
